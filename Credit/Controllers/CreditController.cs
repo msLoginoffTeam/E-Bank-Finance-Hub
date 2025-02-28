@@ -1,5 +1,9 @@
-﻿using CreditService_Patterns.IServices;
+﻿using System.Numerics;
+using System.Reflection;
+using Core.Data.DTOs.Requests;
+using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.innerModels;
+using EasyNetQ;
 using hitscord_net.Models.requestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +21,7 @@ public class CreditControllers : ControllerBase
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
     }
 
+    [Authorize(Roles = "Client")]
     [HttpGet]
     [Route("GetCreditsList/Client")]
     public async Task<IActionResult> GetCreditsListClient([FromQuery] Guid ClientId)
@@ -36,6 +41,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Employee, Manager")]
     [HttpGet]
     [Route("GetCreditsList/Employee")]
     public async Task<IActionResult> GetCreditsListEmployee()
@@ -55,6 +61,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Client, Employee, Manager")]
     [HttpGet]
     [Route("GetCreditHistory")]
     public async Task<IActionResult> GetCreditHistory([FromQuery] Guid UserId, [FromQuery] Guid CreditId)
@@ -139,6 +146,31 @@ public class CreditControllers : ControllerBase
         {
             var paymentResult = await _creditService.PayOffTheLoanAsync(data);
             return Ok(paymentResult);
+        }
+        catch (CustomException ex)
+        {
+            return StatusCode(ex.Code, new { Object = ex.Object, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpPost]
+    [Route("PayAutomatic")]
+    public async Task<IActionResult> PayAutomatic(Guid AccountId, Guid CreditId)
+    {
+        try
+        {
+            var Credit = await _creditService.GetCredit(CreditId);
+
+            using (var bus = RabbitHutch.CreateBus("host=localhost"))
+            {
+                await bus.PubSub.PublishAsync<(Guid, CreditOperationRequest)>((AccountId, new CreditOperationRequest() { CreditId = CreditId, AmountInRubles = Credit.RemainingAmount/(Credit.ClosingDate - DateTime.UtcNow).Days, OperationType = Core.Data.Models.OperationType.Outcome }));
+            }
+            return Ok();
+
         }
         catch (CustomException ex)
         {

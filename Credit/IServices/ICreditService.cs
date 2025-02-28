@@ -1,4 +1,5 @@
-﻿using CreditService_Patterns.Models.requestModels;
+﻿using CreditService_Patterns.Models.dbModels;
+using CreditService_Patterns.Models.requestModels;
 using CreditService_Patterns.Models.responseModels;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
@@ -14,5 +15,5 @@ public interface ICreditService
     Task<Guid> CreateCreditPlanAsync(CreateCreditPlanRequestDTO NewPlanData);
     Task<Guid> GetCreditAsync(GetCreditRequestDTO NewCreditData);
     Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(PayOffTheLoanRequestDTO paymentData);
-
+    Task<ClientCreditDbModel> GetCredit(Guid CreditId);
 }

@@ -128,7 +128,7 @@ public class CreditService : ICreditService
         try
         {
             var creditCheck = await _creditContext.Credit.FirstOrDefaultAsync(credit => credit.Id == CreditId) != null;
-            if(!creditCheck)
+            if (!creditCheck)
             {
                 throw new CustomException("Credit with this Id doesn't exist.", "Get credit history", "Credit Id", 400);
             }
@@ -178,7 +178,7 @@ public class CreditService : ICreditService
         try
         {
             var creditNameCheck = await _creditContext.Plan.FirstOrDefaultAsync(plan => plan.PlanName == NewPlanData.PlanName) != null;
-            if(creditNameCheck)
+            if (creditNameCheck)
             {
                 throw new CustomException("Credit plan with this name already exist.", "Create credit plan", "Plan name", 400);
             }
@@ -215,7 +215,7 @@ public class CreditService : ICreditService
                 throw new CustomException("Credit plan with this Id doesn't exist.", "Get credit", "Plan Id", 400);
             }
 
-            if(NewCreditData.ClosingDate < DateTime.UtcNow)
+            if (NewCreditData.ClosingDate < DateTime.UtcNow)
             {
                 throw new CustomException("Closing date can't be early than now.", "Get credit", "Closing date", 400);
             }
@@ -229,6 +229,8 @@ public class CreditService : ICreditService
                 RemainingAmount = NewCreditData.Amount,
                 Status = ClientCreditStatusEnum.Open
             };
+
+
 
             await _creditContext.Credit.AddAsync(newCredit);
             await _creditContext.SaveChangesAsync();
@@ -263,7 +265,7 @@ public class CreditService : ICreditService
                 Type = PaymentTypeEnum.ByClient
             };
 
-            if(newPayment.PaymentAmount == credit.RemainingAmount)
+            if (newPayment.PaymentAmount == credit.RemainingAmount)
             {
                 credit.RemainingAmount = 0;
                 credit.Status = ClientCreditStatusEnum.Closed;
@@ -288,6 +290,22 @@ public class CreditService : ICreditService
             };
 
             return paymentResult;
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<ClientCreditDbModel> GetCredit(Guid CreditId)
+    {
+        try
+        {
+            return await _creditContext.Credit.FirstAsync(Credit => Credit.Id == CreditId);
         }
         catch (CustomException ex)
         {

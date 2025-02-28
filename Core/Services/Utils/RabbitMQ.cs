@@ -1,4 +1,6 @@
-﻿using EasyNetQ;
+﻿using Core.Data.DTOs.Requests;
+using Core.Data.Models;
+using EasyNetQ;
 
 namespace Core.Services.Utils
 {
@@ -23,6 +25,19 @@ namespace Core.Services.Utils
 
 
             }, conf => conf.WithTopic("CreatedClientId"));
+
+            _bus.PubSub.Subscribe<(Guid AccountId, CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
+            {
+                var (AccountId, Request) = tuple;  
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var OperationService = scope.ServiceProvider.GetRequiredService<OperationService>();
+                    var AccountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(AccountId)));
+                }
+            });
 
 
         }

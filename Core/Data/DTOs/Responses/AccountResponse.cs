@@ -6,8 +6,6 @@ namespace Core.Data.DTOs.Responses
     {
         public Guid Id { get; set; }
 
-        public Guid ClientId { get; set; }
-
         public string Name { get; set; }
 
         public float BalanceInRubles { get; set; }
@@ -17,7 +15,6 @@ namespace Core.Data.DTOs.Responses
             Id = Account.Id;
             Name = Account.Name;
             BalanceInRubles = Account.BalanceInRubles;
-            ClientId = Account.Client.Id;
         }
     }
 }
