@@ -1,4 +1,5 @@
 ﻿using EasyNetQ;
+using Newtonsoft.Json.Linq;
 using UserApi.Data;
 using UserApi.Data.Models;
 using UserApi.Services.Utils.ErrorHandling;
@@ -18,9 +19,19 @@ namespace UserApi.Services
             _bus = RabbitHutch.CreateBus("host=localhost");
         }
 
-        public Data.Models.User GetUserByLogin(string Email)
+        public User GetUserById(Guid UserId)
         {
-            Data.Models.User? User = _context.Users.FirstOrDefault(User => User.Email == Email);
+            User? User = _context.Users.FirstOrDefault(User => User.Id == UserId);
+            if (User == null)
+            {
+                throw new ErrorException(404, "Пользователь с таким Id не найден");
+            }
+            return User;
+        }
+
+        public User GetUserByLogin(string Email)
+        {
+            User? User = _context.Users.FirstOrDefault(User => User.Email == Email);
             if (User == null)
             {
                 throw new ErrorException(404, "Пользователь с такой почтой не найден.");
@@ -28,31 +39,29 @@ namespace UserApi.Services
             return User;
         }
 
-        public (string AccessToken, string RefreshToken) RegisterUser(Data.Models.User User)
+        public List<Client> GetClients()
+        {
+            return _context.Users.OfType<Client>().ToList();
+        }
+
+        public void RegisterUser(User User)
         {
             Guid ClientId = Guid.NewGuid();
 
             if (User.Role == Role.Client)
             {
-
+                _bus.PubSub.Publish(ClientId, "CreatedClientId");
             }
-            _bus.PubSub.Publish(ClientId, "CreatedClientId");
-
-            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(ClientId, Role.Client), RefreshToken: _tokenGenerator.GenerateRefreshToken(ClientId));
-
-            User.RefreshToken = token.RefreshToken;
 
             _context.Users.Add(User);
             _context.SaveChanges();
-
-            return token;
         }
 
-        public (string AccessToken, string RefreshToken) LoginUser(Data.Models.User User)
+        public (string AccessToken, string RefreshToken) LoginUser(User User)
         {
             Guid ClientId = Guid.NewGuid();
 
-            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(ClientId, Role.Client), RefreshToken: _tokenGenerator.GenerateRefreshToken(ClientId));
+            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(ClientId, User.Role), RefreshToken: _tokenGenerator.GenerateRefreshToken(ClientId));
 
             User.RefreshToken = token.RefreshToken;
 
@@ -60,6 +69,35 @@ namespace UserApi.Services
             _context.SaveChanges();
 
             return token;
+        }
+
+        public (string AccessToken, string RefreshToken) Refresh(User User, string LastRefreshToken)
+        {
+            if (User.RefreshToken != LastRefreshToken) throw new ErrorException(401, "Токен просрочен");
+
+            var RefreshToken = _tokenGenerator.GenerateRefreshToken(User.Id);
+            var AccessToken = _tokenGenerator.GenerateAccessToken(User.Id, User.Role);
+
+            User.RefreshToken = RefreshToken;
+
+            _context.Update(User);
+            _context.SaveChanges();
+
+            return (AccessToken, RefreshToken);
+        }
+
+        public void BlockUser(User User)
+        {
+            User.IsBlocked = true;
+            _context.Users.Update(User);
+            _context.SaveChanges();
+        }
+
+        public void UnblockUser(User User)
+        {
+            User.IsBlocked = false;
+            _context.Users.Update(User);
+            _context.SaveChanges();
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Core.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("Accounts");
+                    b.ToTable("Accounts", (string)null);
                 });
 
             modelBuilder.Entity("Core.Data.Models.Client", b =>
@@ -53,7 +53,7 @@ namespace Core.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Clients");
+                    b.ToTable("Clients", (string)null);
                 });
 
             modelBuilder.Entity("Core.Data.Models.Operation", b =>
@@ -81,7 +81,7 @@ namespace Core.Migrations
 
                     b.HasIndex("TargetAccountId");
 
-                    b.ToTable("Operations");
+                    b.ToTable("Operations", (string)null);
 
                     b.HasDiscriminator<int>("OperationCategory");
 
