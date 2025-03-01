@@ -46,11 +46,9 @@ namespace UserApi.Services
 
         public void RegisterUser(User User)
         {
-            Guid ClientId = Guid.NewGuid();
-
             if (User.Role == Role.Client)
             {
-                _bus.PubSub.Publish(ClientId, "CreatedClientId");
+                _bus.PubSub.Publish(User.Id, "CreatedClientId");
             }
 
             _context.Users.Add(User);
@@ -59,9 +57,7 @@ namespace UserApi.Services
 
         public (string AccessToken, string RefreshToken) LoginUser(User User)
         {
-            Guid ClientId = Guid.NewGuid();
-
-            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(ClientId, User.Role), RefreshToken: _tokenGenerator.GenerateRefreshToken(ClientId));
+            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(User.Id, User.Role), RefreshToken: _tokenGenerator.GenerateRefreshToken(User.Id));
 
             User.RefreshToken = token.RefreshToken;
 

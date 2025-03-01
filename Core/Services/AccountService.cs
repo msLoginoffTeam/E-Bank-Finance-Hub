@@ -15,7 +15,7 @@ namespace Core.Services
 
         public Client GetClient(Guid ClientId)
         {
-            Client? Client = _context.Clients.FirstOrDefault(Client => Client.Id == ClientId);
+            Client? Client = _context.Clients.FirstOrDefault(cli => cli.Id == ClientId);
 
             if (Client == null)
             {
