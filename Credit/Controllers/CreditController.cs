@@ -1,5 +1,9 @@
-﻿using CreditService_Patterns.IServices;
+﻿using System.Numerics;
+using System.Reflection;
+using Core.Data.DTOs.Requests;
+using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.innerModels;
+using EasyNetQ;
 using hitscord_net.Models.requestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,12 +21,14 @@ public class CreditControllers : ControllerBase
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
     }
 
+    [Authorize(Roles = "Client")]
     [HttpGet]
     [Route("GetCreditsList/Client")]
-    public async Task<IActionResult> GetCreditsListClient([FromQuery] Guid ClientId)
+    public async Task<IActionResult> GetCreditsListClient()
     {
         try
         {
+            var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
             var creditsList = await _creditService.GetCreditsListClientAsync(ClientId);
             return Ok(creditsList);
         }
@@ -36,6 +42,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Employee, Manager")]
     [HttpGet]
     [Route("GetCreditsList/Employee")]
     public async Task<IActionResult> GetCreditsListEmployee()
@@ -55,13 +62,15 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Client")]
     [HttpGet]
-    [Route("GetCreditHistory")]
-    public async Task<IActionResult> GetCreditHistory([FromQuery] Guid UserId, [FromQuery] Guid CreditId)
+    [Route("GetCreditHistory/Client")]
+    public async Task<IActionResult> GetCreditHistoryClient([FromQuery] Guid CreditId)
     {
         try
         {
-            var creditsList = await _creditService.GetCreditHistoryAsync(CreditId);
+            var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
+            var creditsList = await _creditService.GetCreditHistoryAsync(ClientId, CreditId);
             return Ok(creditsList);
         }
         catch (CustomException ex)
@@ -74,6 +83,27 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Employee, Manager")]
+    [HttpGet]
+    [Route("GetCreditHistory/Employee")]
+    public async Task<IActionResult> GetCreditHistoryEmployee([FromQuery] Guid ClientId, [FromQuery] Guid CreditId)
+    {
+        try
+        {
+            var creditsList = await _creditService.GetCreditHistoryAsync(ClientId, CreditId);
+            return Ok(creditsList);
+        }
+        catch (CustomException ex)
+        {
+            return StatusCode(ex.Code, new { Object = ex.Object, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Client, Employee, Manager")]
     [HttpGet]
     [Route("GetCreditPlans")]
     public async Task<IActionResult> GetCreditPlans()
@@ -93,6 +123,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Employee, Manager")]
     [HttpPost]
     [Route("CreateCreditPlan")]
     public async Task<IActionResult> CreateCreditPlan([FromBody] CreateCreditPlanRequestDTO NewPlanData)
@@ -112,13 +143,15 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Client")]
     [HttpPost]
     [Route("GetCredit")]
     public async Task<IActionResult> GetCredit([FromBody] GetCreditRequestDTO data)
     {
         try
         {
-            var resultId = await _creditService.GetCreditAsync(data);
+            var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
+            var resultId = await _creditService.GetCreditAsync(ClientId, data);
             return Ok(resultId);
         }
         catch (CustomException ex)
@@ -137,7 +170,8 @@ public class CreditControllers : ControllerBase
     {
         try
         {
-            var paymentResult = await _creditService.PayOffTheLoanAsync(data);
+            var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
+            var paymentResult = await _creditService.PayOffTheLoanAsync(ClientId, data);
             return Ok(paymentResult);
         }
         catch (CustomException ex)

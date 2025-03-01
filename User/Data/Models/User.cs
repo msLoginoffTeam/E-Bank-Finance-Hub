@@ -14,6 +14,8 @@ namespace UserApi.Data.Models
 
         public string? RefreshToken { get; set; }
 
+        public bool IsBlocked { get; set; }
+
         public Role Role { get; set; }
 
         protected User() {}
@@ -23,6 +25,7 @@ namespace UserApi.Data.Models
             Email = Request.Email;
             Password = Request.Password;
             FullName = Request.FullName;
+            IsBlocked = false;
         }
     }
 

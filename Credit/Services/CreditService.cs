@@ -1,9 +1,12 @@
-﻿using CreditService_Patterns.Contexts;
+﻿using Core.Data.DTOs.Requests;
+using Core.Data.Models;
+using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.dbModels;
 using CreditService_Patterns.Models.innerModels;
 using CreditService_Patterns.Models.requestModels;
 using CreditService_Patterns.Models.responseModels;
+using EasyNetQ;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +100,7 @@ public class CreditService : ICreditService
                     {
                         Id = credit.Id,
                         ClientId = credit.ClientId,
+                        AccountId = credit.AccountId,
                         CreditPlan = new CreditPlanResponse
                         {
                             Id = credit.CreditPlan.Id,
@@ -123,12 +127,12 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<CreditFullDataResponseDTO> GetCreditHistoryAsync(Guid CreditId)
+    public async Task<CreditFullDataResponseDTO> GetCreditHistoryAsync(Guid ClientId, Guid CreditId)
     {
         try
         {
-            var creditCheck = await _creditContext.Credit.FirstOrDefaultAsync(credit => credit.Id == CreditId) != null;
-            if(!creditCheck)
+            var creditCheck = await _creditContext.Credit.FirstOrDefaultAsync(credit => credit.Id == CreditId && credit.ClientId == ClientId) != null;
+            if (!creditCheck)
             {
                 throw new CustomException("Credit with this Id doesn't exist.", "Get credit history", "Credit Id", 400);
             }
@@ -178,7 +182,7 @@ public class CreditService : ICreditService
         try
         {
             var creditNameCheck = await _creditContext.Plan.FirstOrDefaultAsync(plan => plan.PlanName == NewPlanData.PlanName) != null;
-            if(creditNameCheck)
+            if (creditNameCheck)
             {
                 throw new CustomException("Credit plan with this name already exist.", "Create credit plan", "Plan name", 400);
             }
@@ -205,7 +209,7 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<Guid> GetCreditAsync(GetCreditRequestDTO NewCreditData)
+    public async Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData)
     {
         try
         {
@@ -215,7 +219,7 @@ public class CreditService : ICreditService
                 throw new CustomException("Credit plan with this Id doesn't exist.", "Get credit", "Plan Id", 400);
             }
 
-            if(NewCreditData.ClosingDate < DateTime.UtcNow)
+            if (NewCreditData.ClosingDate < DateTime.UtcNow)
             {
                 throw new CustomException("Closing date can't be early than now.", "Get credit", "Closing date", 400);
             }
@@ -223,7 +227,8 @@ public class CreditService : ICreditService
             var newCredit = new ClientCreditDbModel
             {
                 CreditPlanId = NewCreditData.CreditPlanId,
-                ClientId = NewCreditData.ClientId,
+                ClientId = ClientId,
+                AccountId = NewCreditData.AccountId,
                 Amount = NewCreditData.Amount,
                 ClosingDate = NewCreditData.ClosingDate,
                 RemainingAmount = NewCreditData.Amount,
@@ -245,11 +250,11 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(PayOffTheLoanRequestDTO paymentData)
+    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData)
     {
         try
         {
-            var credit = await _creditContext.Credit.FirstOrDefaultAsync(credit => credit.Id == paymentData.CreditId && credit.ClientId == paymentData.ClientId);
+            var credit = await _creditContext.Credit.FirstOrDefaultAsync(credit => credit.Id == paymentData.CreditId && credit.AccountId == paymentData.AccountId && credit.ClientId == ClientId);
             if (credit == null)
             {
                 throw new CustomException("Credit with this Id and client Id doesn't exist", "Pay off the loan", "Credit Id and client Id", 400);
@@ -263,7 +268,26 @@ public class CreditService : ICreditService
                 Type = PaymentTypeEnum.ByClient
             };
 
-            if(newPayment.PaymentAmount == credit.RemainingAmount)
+            CustomException response;
+
+            using (var bus = RabbitHutch.CreateBus("host=localhost"))
+            {
+                var request = new CreditOperationRequest
+                {
+                    CreditId = credit.Id,
+                    AmountInRubles = newPayment.PaymentAmount,
+                    OperationType = OperationType.Outcome
+                };
+                
+                response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), CustomException>((credit.AccountId, request));
+            }
+
+            if(response.Code != 200)
+            {
+                throw response;
+            }
+
+            if (newPayment.PaymentAmount == credit.RemainingAmount)
             {
                 credit.RemainingAmount = 0;
                 credit.Status = ClientCreditStatusEnum.Closed;
@@ -288,6 +312,120 @@ public class CreditService : ICreditService
             };
 
             return paymentResult;
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task PayOffTheLoanAutomaticAsync()
+    {
+        try
+        {
+            var creditsNumber = await _creditContext.Credit.CountAsync();
+
+            for(int i = 0; i < creditsNumber / 10; ++i)
+            {
+                var creditsList = await _creditContext.Credit.Skip(i * 19).Take(10).ToListAsync();
+
+                foreach (var credit in creditsList)
+                {
+                    CustomException response;
+
+                    var request = new CreditOperationRequest
+                    {
+                        CreditId = credit.Id,
+                        AmountInRubles = MathF.Round(credit.RemainingAmount / (credit.ClosingDate - DateTime.UtcNow).Days, 2),
+                        OperationType = OperationType.Outcome
+                    };
+
+                    using (var bus = RabbitHutch.CreateBus("host=localhost"))
+                    {
+                        response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), CustomException>((credit.AccountId, request));
+                    }
+
+                    if (response.Code != 200)
+                    {
+                        credit.Status = ClientCreditStatusEnum.Expired;
+                        _creditContext.Credit.Update(credit);
+                        await _creditContext.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        var newPayment = new CreditPaymentDbModel
+                        {
+                            ClientCreditId = credit.Id,
+                            PaymentAmount = request.AmountInRubles,
+                            PaymentDate = DateTime.UtcNow,
+                            Type = PaymentTypeEnum.ByClient
+                        };
+
+                        if (newPayment.PaymentAmount == credit.RemainingAmount)
+                        {
+                            credit.RemainingAmount = 0;
+                            credit.Status = ClientCreditStatusEnum.Closed;
+                        }
+                        else
+                        {
+                            credit.RemainingAmount -= newPayment.PaymentAmount;
+                        }
+
+                        await _creditContext.Payment.AddAsync(newPayment);
+                        _creditContext.Credit.Update(credit);
+                        await _creditContext.SaveChangesAsync();
+                    }
+                }
+            }
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task PercentAsync()
+    {
+        try
+        {
+            var creditsNumber = await _creditContext.Credit.CountAsync();
+
+            for (int i = 0; i < creditsNumber / 10; ++i)
+            {
+                var creditsList = await _creditContext.Credit.Include(credit => credit.CreditPlan).Skip(i * 19).Take(10).ToListAsync();
+
+                foreach (var credit in creditsList)
+                {
+                    credit.RemainingAmount *= 1 + (credit.CreditPlan.PlanPercent / 100);
+
+                    _creditContext.Credit.Update(credit);
+                    await _creditContext.SaveChangesAsync();
+                }
+            }
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<ClientCreditDbModel> GetCredit(Guid CreditId)
+    {
+        try
+        {
+            return await _creditContext.Credit.FirstAsync(Credit => Credit.Id == CreditId);
         }
         catch (CustomException ex)
         {

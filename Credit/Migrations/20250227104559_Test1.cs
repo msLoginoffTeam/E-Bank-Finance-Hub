@@ -32,6 +32,7 @@ namespace CreditService_Patterns.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CreditPlanId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<float>(type: "real", nullable: false),
                     ClosingDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RemainingAmount = table.Column<float>(type: "real", nullable: false),

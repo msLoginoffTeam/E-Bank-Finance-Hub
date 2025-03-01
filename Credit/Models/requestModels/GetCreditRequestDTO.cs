@@ -4,9 +4,9 @@ namespace hitscord_net.Models.requestModels;
 
 public class GetCreditRequestDTO
 {
-    [Required(ErrorMessage = "Client id is required.")]
-    [RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", ErrorMessage = "Invalid GUID format in client id.")]
-    public required Guid ClientId { get; set; }
+    [Required(ErrorMessage = "Account id is required.")]
+    [RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", ErrorMessage = "Invalid GUID format in account id.")]
+    public required Guid AccountId { get; set; }
 
     [Required(ErrorMessage = "Credit plan id is required.")]
     [RegularExpression(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", ErrorMessage = "Invalid GUID format in credit plan id.")]

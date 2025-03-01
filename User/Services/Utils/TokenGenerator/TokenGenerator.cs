@@ -20,7 +20,7 @@ namespace UserApi.Services.Utils.TokenGenerator
             {
                 new Claim("Id", UserId.ToString()),
                 new Claim("TokenType", "Access"),
-                new Claim("Role", Role.ToString())
+                new Claim(ClaimTypes.Role, Role.ToString())
             };
 
             DateTime expires = DateTime.UtcNow.AddSeconds(_configuration.AccessTokenExpirationSeconds);

@@ -6,6 +6,7 @@ public class ClientCreditForEmployeeResponse
 {
     public required Guid Id { get; set; }
     public required Guid ClientId { get; set; }
+    public required Guid AccountId { get; set; }
     public required CreditPlanResponse CreditPlan { get; set; }
     public required float Amount { get; set; }
     public required DateTime ClosingDate { get; set; }

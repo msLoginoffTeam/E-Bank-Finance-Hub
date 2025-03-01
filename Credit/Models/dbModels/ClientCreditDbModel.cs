@@ -24,6 +24,9 @@ public class ClientCreditDbModel
     public required Guid ClientId { get; set; }
 
     [Required]
+    public required Guid AccountId { get; set; }
+
+    [Required]
     public required float Amount { get; set; }
 
     [Required]
