@@ -1,0 +1,98 @@
+version: '3.8'  
+
+services:  
+  core:    
+    build:  
+      context: . 
+      dockerfile: CoreDockerfile
+    ports:  
+      - "8080:8080"
+    networks:  
+      - network
+    depends_on:  
+      - coreDB
+      - rabbitmq 
+
+  coreDB:  
+    image: postgres:latest
+    container_name: coreDB
+    ports:  
+      - "5432:5432" 
+    environment:  
+      POSTGRES_DB: CoreDB 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin    
+    volumes:  
+      - coreData:/var/lib/postgresql/data
+    networks:  
+      - network
+
+  credit:    
+    build:  
+      context: . 
+      dockerfile: CreditDockerfile
+    ports:  
+      - "8081:8080"
+    networks:  
+      - network
+    depends_on:  
+      - creditDB
+      - rabbitmq 
+
+  creditDB:  
+    image: postgres:latest
+    container_name: creditDB
+    ports:  
+      - "5433:5432" 
+    environment:  
+      POSTGRES_DB: CreditDB 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin    
+    volumes:  
+      - creditData:/var/lib/postgresql/data
+    networks:  
+      - network
+
+  user:    
+    build:  
+      context: . 
+      dockerfile: UserDockerfile
+    ports:  
+      - "8082:8080"
+    networks:  
+      - network
+    depends_on:  
+      - userDB
+      - rabbitmq 
+
+  userDB:  
+    image: postgres:latest
+    container_name: userDB
+    ports:  
+      - "5434:5432" 
+    environment:  
+      POSTGRES_DB: UsersDB 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin    
+    volumes:  
+      - userData:/var/lib/postgresql/data
+    networks:  
+      - network
+
+  rabbitmq:  
+    image: rabbitmq:4.0-management  
+    container_name: rabbitmq  
+    ports:  
+      - "5672:5672" 
+      - "15672:15672" 
+    networks:  
+      - network
+
+networks:  
+  network:  
+    driver: bridge
+
+volumes:  
+  coreData:
+  creditData:
+  userData:

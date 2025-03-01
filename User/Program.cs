@@ -13,7 +13,8 @@ using UserApi.Services.Utils.TokenGenerator;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("userappsettings.json", optional: true, reloadOnChange: true);
 builder.Services.AddControllers().AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

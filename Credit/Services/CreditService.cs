@@ -1,4 +1,5 @@
 ﻿using Core.Data.DTOs.Requests;
+using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
@@ -238,6 +239,18 @@ public class CreditService : ICreditService
             await _creditContext.Credit.AddAsync(newCredit);
             await _creditContext.SaveChangesAsync();
 
+            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            {
+                var request = new CreditOperationRequest
+                {
+                    CreditId = newCredit.Id,
+                    AmountInRubles = newCredit.Amount,
+                    OperationType = OperationType.Income
+                };
+
+                await bus.PubSub.PublishAsync<(Guid, CreditOperationRequest)>((newCredit.AccountId, request));
+            }
+
             return newCredit.Id;
         }
         catch (CustomException ex)
@@ -268,9 +281,7 @@ public class CreditService : ICreditService
                 Type = PaymentTypeEnum.ByClient
             };
 
-            CustomException response;
-
-            using (var bus = RabbitHutch.CreateBus("host=localhost"))
+            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
             {
                 var request = new CreditOperationRequest
                 {
@@ -279,12 +290,12 @@ public class CreditService : ICreditService
                     OperationType = OperationType.Outcome
                 };
                 
-                response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), CustomException>((credit.AccountId, request));
-            }
+                var response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), ErrorResponse?>((credit.AccountId, request));
 
-            if(response.Code != 200)
-            {
-                throw response;
+                if (response != null)
+                {
+                    throw new CustomException(response.message, "", "", response.status);
+                }
             }
 
             if (newPayment.PaymentAmount == credit.RemainingAmount)
@@ -327,58 +338,53 @@ public class CreditService : ICreditService
     {
         try
         {
-            var creditsNumber = await _creditContext.Credit.CountAsync();
+            var creditsList = await _creditContext.Credit.Where(Credit => Credit.RemainingAmount > 0 && Credit.Status != ClientCreditStatusEnum.Closed).ToListAsync();
 
-            for(int i = 0; i < creditsNumber / 10; ++i)
+            foreach (var credit in creditsList)
             {
-                var creditsList = await _creditContext.Credit.Skip(i * 19).Take(10).ToListAsync();
+                ErrorResponse? response;
 
-                foreach (var credit in creditsList)
+                var request = new CreditOperationRequest
                 {
-                    CustomException response;
+                    CreditId = credit.Id,
+                    AmountInRubles = MathF.Round(credit.RemainingAmount / (credit.ClosingDate - DateTime.UtcNow).Days, 2),
+                    OperationType = OperationType.Outcome
+                };
 
-                    var request = new CreditOperationRequest
+                using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+                {
+                    response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), ErrorResponse?>((credit.AccountId, request));
+                }
+
+                if (response != null)
+                {
+                    credit.Status = ClientCreditStatusEnum.Expired;
+                    _creditContext.Credit.Update(credit);
+                    await _creditContext.SaveChangesAsync();
+                }
+                else
+                {
+                    var newPayment = new CreditPaymentDbModel
                     {
-                        CreditId = credit.Id,
-                        AmountInRubles = MathF.Round(credit.RemainingAmount / (credit.ClosingDate - DateTime.UtcNow).Days, 2),
-                        OperationType = OperationType.Outcome
+                        ClientCreditId = credit.Id,
+                        PaymentAmount = request.AmountInRubles,
+                        PaymentDate = DateTime.UtcNow,
+                        Type = PaymentTypeEnum.ByClient
                     };
 
-                    using (var bus = RabbitHutch.CreateBus("host=localhost"))
+                    if (newPayment.PaymentAmount == credit.RemainingAmount)
                     {
-                        response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), CustomException>((credit.AccountId, request));
-                    }
-
-                    if (response.Code != 200)
-                    {
-                        credit.Status = ClientCreditStatusEnum.Expired;
-                        _creditContext.Credit.Update(credit);
-                        await _creditContext.SaveChangesAsync();
+                        credit.RemainingAmount = 0;
+                        credit.Status = ClientCreditStatusEnum.Closed;
                     }
                     else
                     {
-                        var newPayment = new CreditPaymentDbModel
-                        {
-                            ClientCreditId = credit.Id,
-                            PaymentAmount = request.AmountInRubles,
-                            PaymentDate = DateTime.UtcNow,
-                            Type = PaymentTypeEnum.ByClient
-                        };
-
-                        if (newPayment.PaymentAmount == credit.RemainingAmount)
-                        {
-                            credit.RemainingAmount = 0;
-                            credit.Status = ClientCreditStatusEnum.Closed;
-                        }
-                        else
-                        {
-                            credit.RemainingAmount -= newPayment.PaymentAmount;
-                        }
-
-                        await _creditContext.Payment.AddAsync(newPayment);
-                        _creditContext.Credit.Update(credit);
-                        await _creditContext.SaveChangesAsync();
+                        credit.RemainingAmount -= newPayment.PaymentAmount;
                     }
+
+                    await _creditContext.Payment.AddAsync(newPayment);
+                    _creditContext.Credit.Update(credit);
+                    await _creditContext.SaveChangesAsync();
                 }
             }
         }
@@ -396,19 +402,14 @@ public class CreditService : ICreditService
     {
         try
         {
-            var creditsNumber = await _creditContext.Credit.CountAsync();
+            var creditsList = await _creditContext.Credit.Where(Credit => Credit.RemainingAmount > 0 && Credit.Status != ClientCreditStatusEnum.Closed).Include(credit => credit.CreditPlan).ToListAsync();
 
-            for (int i = 0; i < creditsNumber / 10; ++i)
+            foreach (var credit in creditsList)
             {
-                var creditsList = await _creditContext.Credit.Include(credit => credit.CreditPlan).Skip(i * 19).Take(10).ToListAsync();
+                credit.RemainingAmount *= 1 + (credit.CreditPlan.PlanPercent / 100);
 
-                foreach (var credit in creditsList)
-                {
-                    credit.RemainingAmount *= 1 + (credit.CreditPlan.PlanPercent / 100);
-
-                    _creditContext.Credit.Update(credit);
-                    await _creditContext.SaveChangesAsync();
-                }
+                _creditContext.Credit.Update(credit);
+                await _creditContext.SaveChangesAsync();
             }
         }
         catch (CustomException ex)

@@ -12,6 +12,9 @@ using UserApi.Services.Utils.TokenGenerator;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("creditappsettings.Development.json", optional: true, reloadOnChange: true);
+
 builder.Services.AddDbContext<CreditServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CreditServiceContext")));
 
@@ -96,7 +99,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("DailyTrigger")
-        .WithCronSchedule("0 0 0 * * ?")
+        .WithCronSchedule("0 0 * * * ?")
     );
 });
 

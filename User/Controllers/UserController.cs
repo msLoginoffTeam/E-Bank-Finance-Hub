@@ -86,6 +86,7 @@ namespace UserApi.Controllers
             var UserId = User.Claims.ToList()[0].Value;
 
             User user = _userService.GetUserById(new Guid(UserId));
+            if (user.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
             var token = _userService.Refresh(user, Request.Headers.Authorization.ToString().Substring(7));
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));

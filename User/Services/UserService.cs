@@ -16,7 +16,7 @@ namespace UserApi.Services
         {
             _tokenGenerator = tokenGenerator;
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
         }
 
         public User GetUserById(Guid UserId)

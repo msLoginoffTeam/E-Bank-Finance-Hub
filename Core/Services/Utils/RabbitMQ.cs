@@ -1,4 +1,5 @@
 ﻿using Core.Data.DTOs.Requests;
+using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services.Utils.ErrorHandling;
 using CoreApi.Models.innerModels;
@@ -15,7 +16,7 @@ namespace Core.Services.Utils
         {
             _serviceProvider = serviceProvider;
 
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
 
             _bus.PubSub.Subscribe<Guid>("CreatedUserId_Core", ClientId =>
             {
@@ -41,7 +42,7 @@ namespace Core.Services.Utils
                 }
             });
 
-            _bus.Rpc.Respond<(Guid AccountId, CreditOperationRequest Request), CustomException>(tuple =>
+            _bus.Rpc.Respond<(Guid AccountId, CreditOperationRequest Request), ErrorResponse?>(tuple =>
             {
                 var (AccountId, Request) = tuple;
 
@@ -59,13 +60,9 @@ namespace Core.Services.Utils
                     }
                     catch (ErrorException ex) 
                     {
-                        return new CustomException(ex.message, "Make operation", "", ex.status);
+                        return new ErrorResponse(ex.status, ex.message);
                     }
-                    catch (Exception ex)
-                    {
-                        return new CustomException("Some troubles", "Make operation", "", 500);
-                    }
-                    return new CustomException("Good", "Good", "Good", 200);
+                    return null;
                 }
             });
         }
