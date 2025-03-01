@@ -14,9 +14,12 @@
     "@mantine/form": "^7.17.0",
     "@mantine/hooks": "^7.17.0",
     "@mantine/notifications": "^7.17.0",
+    "@reduxjs/toolkit": "^2.5.1",
+    "axios": "^1.7.9",
     "lucide-react": "^0.476.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.0",
     "sass": "^1.85.1"
   },
