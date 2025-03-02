@@ -112,6 +112,7 @@ using (var scope = app.Services.CreateScope())
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
 }
+app.UseCors("AllowAllOrigins");
 
 if (app.Environment.IsDevelopment())
 {
