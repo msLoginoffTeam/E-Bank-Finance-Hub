@@ -69,6 +69,7 @@ namespace UserApi.Controllers
         {
             User User = _userService.GetUserByLogin(Request.Email);
             if (User.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
+            if (User.Password != Request.Password) { throw new ErrorException(400, "Пароль не подходит."); }
             var token = _userService.LoginUser(User);
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));

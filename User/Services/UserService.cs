@@ -34,7 +34,7 @@ namespace UserApi.Services
             User? User = _context.Users.FirstOrDefault(User => User.Email == Email);
             if (User == null)
             {
-                throw new ErrorException(404, "Пользователь с такой почтой не найден.");
+                throw new ErrorException(400, "Пользователь с такой почтой не найден.");
             }
             return User;
         }
