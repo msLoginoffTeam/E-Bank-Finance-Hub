@@ -2,7 +2,7 @@
 
 namespace UserApi.Data.DTOs.Requests
 {
-    public class CreateUserRequest
+    public class UserDTO
     {
         public string Email { get; set; }
 

@@ -1,9 +1,6 @@
-﻿using System.Numerics;
-using System.Reflection;
-using Core.Data.DTOs.Requests;
+﻿using Credit_Api.Models.requestModels;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.innerModels;
-using EasyNetQ;
 using hitscord_net.Models.requestModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -110,7 +107,8 @@ public class CreditControllers : ControllerBase
     {
         try
         {
-            var planList = await _creditService.GetCreditPlanListAsync();
+            var Role = User.Claims.ToList()[2].Value;
+            var planList = await _creditService.GetCreditPlanListAsync(Role);
             return Ok(planList);
         }
         catch (CustomException ex)
@@ -173,6 +171,27 @@ public class CreditControllers : ControllerBase
             var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
             var paymentResult = await _creditService.PayOffTheLoanAsync(ClientId, data);
             return Ok(paymentResult);
+        }
+        catch (CustomException ex)
+        {
+            return StatusCode(ex.Code, new { Object = ex.Object, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Employee, Manager")]
+    [HttpPost]
+    [Route("CloseCreditPlan")]
+    public async Task<IActionResult> CloseCreditPlan([FromBody] CloseCreditPlanRequestDTO data)
+    {
+        var Role = User.Claims.ToList()[2].Value;
+        try
+        {
+            var resultId = await _creditService.CloseCreditPlanAsync(data.CreditPlanId);
+            return Ok(resultId);
         }
         catch (CustomException ex)
         {

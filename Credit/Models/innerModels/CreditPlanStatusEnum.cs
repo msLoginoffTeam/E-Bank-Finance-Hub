@@ -3,5 +3,5 @@
 public enum CreditPlanStatusEnum
 {
     Open,
-    Deleted
+    Archive
 }

@@ -68,12 +68,12 @@ namespace Core.Controllers
         [HttpDelete]
         [Route("close")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult deleteAccount(Guid AccountId)
+        public ActionResult closeAccount(Guid AccountId)
         {
             var ClientId = User.Claims.ToList()[0].Value;
             Account Account = _accountService.GetAccount(AccountId, new Guid(ClientId));
 
-            _accountService.DeleteAccount(Account);
+            _accountService.CloseAccount(Account);
 
             return Ok();
         }

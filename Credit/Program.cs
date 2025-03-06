@@ -99,7 +99,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("DailyTrigger")
-        .WithCronSchedule("0 0 * * * ?")
+        .WithCronSchedule("*/20 * * * * ?")
     );
 });
 

@@ -10,11 +10,14 @@ namespace Core.Data.DTOs.Responses
 
         public float BalanceInRubles { get; set; }
 
+        public bool IsClosed { get; set; }
+
         public AccountResponse(Account Account)
         {
             Id = Account.Id;
             Name = Account.Name;
             BalanceInRubles = Account.BalanceInRubles;
+            IsClosed = Account.IsClosed;
         }
     }
 }

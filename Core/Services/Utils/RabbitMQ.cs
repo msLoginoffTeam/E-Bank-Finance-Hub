@@ -65,6 +65,18 @@ namespace Core.Services.Utils
                     return null;
                 }
             });
+
+            _bus.Rpc.Respond<Guid, bool>(AccountId =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    var account = accountService.GetAccount(AccountId);
+                    if (account == null) { return false; }
+                    else return true;
+                }
+            });
         }
     }
 }

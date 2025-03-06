@@ -8,6 +8,8 @@ namespace Core.Data.Models
 
         public Client Client { get; set; }
 
+        public bool IsClosed { get; set; }
+
         public string Name { get; set; }
 
         public float BalanceInRubles { get; set; }
@@ -19,6 +21,7 @@ namespace Core.Data.Models
             Id = Guid.NewGuid();
             this.Client = User;
             this.Name = Name;
+            this.IsClosed = false;
             BalanceInRubles = 0;
         }
     }

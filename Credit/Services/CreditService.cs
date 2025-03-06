@@ -1,11 +1,11 @@
 ﻿using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
+using Credit_Api.Models.responseModels;
 using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.dbModels;
 using CreditService_Patterns.Models.innerModels;
-using CreditService_Patterns.Models.requestModels;
 using CreditService_Patterns.Models.responseModels;
 using EasyNetQ;
 using hitscord_net.Models.DBModels;
@@ -23,23 +23,46 @@ public class CreditService : ICreditService
         _creditContext = creditContext ?? throw new ArgumentNullException(nameof(creditContext));
     }
 
-    public async Task<CreditPlanListResponseDTO> GetCreditPlanListAsync()
+    public async Task<CreditPlanListResponseDTO> GetCreditPlanListAsync(string Role)
     {
         try
         {
             var plansList = new CreditPlanListResponseDTO
             {
                 PlanList = await _creditContext.Plan
+                    .Where(plan => Role != "Client" || plan.Status != CreditPlanStatusEnum.Archive)
                     .Select(plan => new CreditPlanResponse
                     {
                         Id = plan.Id,
                         PlanName = plan.PlanName,
-                        PlanPercent = plan.PlanPercent
+                        PlanPercent = plan.PlanPercent,
+                        Status = Role == "Client" ? null : plan.Status
                     })
                     .ToListAsync()
             };
 
             return plansList;
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<bool> CheckIfHaveActiveCreditAsync(Guid AccountId)
+    {
+        try
+        {
+            var creditsList = await _creditContext.Credit
+                    .Include(credit => credit.CreditPlan)
+                    .Where(credit => credit.AccountId == AccountId && credit.Status != ClientCreditStatusEnum.Closed)
+                    .CountAsync();
+
+            return creditsList > 0;
         }
         catch (CustomException ex)
         {
@@ -67,7 +90,8 @@ public class CreditService : ICreditService
                         {
                             Id = credit.CreditPlan.Id,
                             PlanName = credit.CreditPlan.PlanName,
-                            PlanPercent = credit.CreditPlan.PlanPercent
+                            PlanPercent = credit.CreditPlan.PlanPercent,
+                            Status = credit.CreditPlan.Status
                         },
                         Amount = credit.Amount,
                         ClosingDate = credit.ClosingDate,
@@ -106,7 +130,8 @@ public class CreditService : ICreditService
                         {
                             Id = credit.CreditPlan.Id,
                             PlanName = credit.CreditPlan.PlanName,
-                            PlanPercent = credit.CreditPlan.PlanPercent
+                            PlanPercent = credit.CreditPlan.PlanPercent,
+                            Status = credit.CreditPlan.Status
                         },
                         Amount = credit.Amount,
                         ClosingDate = credit.ClosingDate,
@@ -150,7 +175,8 @@ public class CreditService : ICreditService
                 {
                     Id = credit.CreditPlan.Id,
                     PlanName = credit.CreditPlan.PlanName,
-                    PlanPercent = credit.CreditPlan.PlanPercent
+                    PlanPercent = credit.CreditPlan.PlanPercent,
+                    Status = credit.CreditPlan.Status
                 },
                 Amount = credit.Amount,
                 ClosingDate = credit.ClosingDate,
@@ -223,6 +249,13 @@ public class CreditService : ICreditService
             if (NewCreditData.ClosingDate < DateTime.UtcNow)
             {
                 throw new CustomException("Closing date can't be early than now.", "Get credit", "Closing date", 400);
+            }
+
+
+            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            {
+                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId);
+                if (!AccountExists) throw new CustomException("Account does not exist.", "Get credit", "AccountId", 400);
             }
 
             var newCredit = new ClientCreditDbModel
@@ -344,10 +377,12 @@ public class CreditService : ICreditService
             {
                 ErrorResponse? response;
 
+                int tensOfSeconds = (int)Math.Ceiling((credit.ClosingDate - DateTime.UtcNow).TotalSeconds / 20.0);
+
                 var request = new CreditOperationRequest
                 {
                     CreditId = credit.Id,
-                    AmountInRubles = MathF.Round(credit.RemainingAmount / (credit.ClosingDate - DateTime.UtcNow).Days, 2),
+                    AmountInRubles = MathF.Round(credit.RemainingAmount / tensOfSeconds, 2),
                     OperationType = OperationType.Outcome
                 };
 
@@ -364,6 +399,7 @@ public class CreditService : ICreditService
                 }
                 else
                 {
+                    credit.Status = ClientCreditStatusEnum.Open;
                     var newPayment = new CreditPaymentDbModel
                     {
                         ClientCreditId = credit.Id,
@@ -427,6 +463,37 @@ public class CreditService : ICreditService
         try
         {
             return await _creditContext.Credit.FirstAsync(Credit => Credit.Id == CreditId);
+        }
+        catch (CustomException ex)
+        {
+            throw new CustomException(ex.Message, ex.Type, ex.Object, ex.Code);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    public async Task<Guid> CloseCreditPlanAsync(Guid CreditPlanId)
+    {
+        try
+        {
+            var creditPlan = await _creditContext.Plan.FirstOrDefaultAsync(plan => plan.Id == CreditPlanId);
+            if (creditPlan == null)
+            {
+                throw new CustomException("Credit plan with this Id doesn't exist.", "Close credit plan", "Credit plan ID", 400);
+            }
+            if (creditPlan.Status == CreditPlanStatusEnum.Archive)
+            {
+                throw new CustomException("Credit plan with this Id already closed.", "Close credit plan", "Credit plan ID", 400);
+            }
+
+            creditPlan.Status = CreditPlanStatusEnum.Archive;
+
+            _creditContext.Plan.Update(creditPlan);
+            await _creditContext.SaveChangesAsync();
+
+            return creditPlan.Id;
         }
         catch (CustomException ex)
         {

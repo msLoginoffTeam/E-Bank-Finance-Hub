@@ -44,6 +44,12 @@ namespace UserApi.Services
             return _context.Users.OfType<Client>().ToList();
         }
 
+        public void EditUser(User User)
+        {
+            _context.Users.Update(User);
+            _context.SaveChanges();
+        }
+
         public void RegisterUser(User User)
         {
             if (User.Role == Role.Client)

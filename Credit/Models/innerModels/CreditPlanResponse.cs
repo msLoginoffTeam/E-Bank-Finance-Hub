@@ -7,4 +7,5 @@ public class CreditPlanResponse
     public required Guid Id { get; set; }
     public required string PlanName { get; set; }
     public required float PlanPercent { get; set; }
+    public CreditPlanStatusEnum? Status { get; set; }
 }
