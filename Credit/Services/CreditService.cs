@@ -374,7 +374,7 @@ public class CreditService : ICreditService
 
             using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
             {
-                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId);
+                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId, x => x.WithQueueName("AccountExistCheck"));
                 if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
             }
 

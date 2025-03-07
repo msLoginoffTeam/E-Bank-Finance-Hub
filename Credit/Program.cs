@@ -58,6 +58,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ICreditService, CreditService>();
+builder.Services.AddSingleton<CreditService_Patterns.Services.Utils.RabbitMQ>();
 
 TokenGeneratorConfiguration tokenGeneratorConfiguration = new TokenGeneratorConfiguration();
 builder.Configuration.Bind("Authentication", tokenGeneratorConfiguration);
@@ -111,6 +112,9 @@ using (var scope = app.Services.CreateScope())
 {
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
+
+    var bus = app.Services.GetRequiredService<CreditService_Patterns.Services.Utils.RabbitMQ>();
+    bus = new CreditService_Patterns.Services.Utils.RabbitMQ(app.Services);
 }
 app.UseCors("AllowAllOrigins");
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using User_Api.Data;
 using UserApi.Data;
 using UserApi.Services;
 using UserApi.Services.Utils.TokenGenerator;
@@ -16,7 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
                    .AddJsonFile("userappsettings.json", optional: true, reloadOnChange: true);
 builder.Services.AddControllers().AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())).ConfigureApiBehaviorOptions(options =>
+        {
+            options.InvalidModelStateResponseFactory = InvalidModelResponse.MakeValidationResponse;
+        }); ;
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>

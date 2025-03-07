@@ -73,10 +73,10 @@ namespace Core.Services.Utils
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
                     var account = accountService.GetAccount(AccountId);
-                    if (account == null) { return false; }
+                    if (account == null || account.IsClosed == true) { return false; }
                     else return true;
                 }
-            });
+            }, configure: x => x.WithQueueName("AccountExistCheck"));
         }
     }
 }

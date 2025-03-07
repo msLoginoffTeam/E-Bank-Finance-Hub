@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using User_Api.Data.DTOs.Responses;
@@ -69,7 +71,7 @@ namespace UserApi.Controllers
         {
             User User = _userService.GetUserByLogin(Request.Email);
             if (User.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
-            if (User.Password != Request.Password) { throw new ErrorException(400, "Пароль не подходит."); }
+            if (User.Password != Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Request.Password)))) { throw new ErrorException(400, "Пароль не подходит."); }
             var token = _userService.LoginUser(User);
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
