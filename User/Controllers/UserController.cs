@@ -155,7 +155,7 @@ namespace UserApi.Controllers
         /// Получение всех клиентов
         /// </summary>
         [Authorize(Roles = "Employee, Manager")]
-        [HttpPost]
+        [HttpGet]
         [Route("api/clients/all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<TokenResponse> getClients()
