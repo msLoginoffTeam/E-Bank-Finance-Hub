@@ -21,12 +21,12 @@ public class CreditControllers : ControllerBase
     [Authorize(Roles = "Client")]
     [HttpGet]
     [Route("GetCreditsList/Client")]
-    public async Task<IActionResult> GetCreditsListClient()
+    public async Task<IActionResult> GetCreditsListClient([FromQuery] ClientCreditStatusEnum? Status, [FromQuery] int ElementsNumber, [FromQuery] int PageNumber)
     {
         try
         {
             var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
-            var creditsList = await _creditService.GetCreditsListClientAsync(ClientId);
+            var creditsList = await _creditService.GetCreditsListClientAsync(ClientId, Status, ElementsNumber, PageNumber);
             return Ok(creditsList);
         }
         catch (CustomException ex)
@@ -42,11 +42,11 @@ public class CreditControllers : ControllerBase
     [Authorize(Roles = "Employee, Manager")]
     [HttpGet]
     [Route("GetCreditsList/Employee")]
-    public async Task<IActionResult> GetCreditsListEmployee()
+    public async Task<IActionResult> GetCreditsListEmployee([FromQuery] Guid? ClientId, [FromQuery] ClientCreditStatusEnum? Status, [FromQuery] int ElementsNumber, [FromQuery] int PageNumber)
     {
         try
         {
-            var creditsList = await _creditService.GetCreditsListEmployeeAsync();
+            var creditsList = await _creditService.GetCreditsListEmployeeAsync(ClientId, Status, ElementsNumber, PageNumber);
             return Ok(creditsList);
         }
         catch (CustomException ex)
@@ -67,7 +67,7 @@ public class CreditControllers : ControllerBase
         try
         {
             var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
-            var creditsList = await _creditService.GetCreditHistoryAsync(ClientId, CreditId);
+            var creditsList = await _creditService.GetCreditHistoryForClientAsync(ClientId, CreditId);
             return Ok(creditsList);
         }
         catch (CustomException ex)
@@ -83,11 +83,11 @@ public class CreditControllers : ControllerBase
     [Authorize(Roles = "Employee, Manager")]
     [HttpGet]
     [Route("GetCreditHistory/Employee")]
-    public async Task<IActionResult> GetCreditHistoryEmployee([FromQuery] Guid ClientId, [FromQuery] Guid CreditId)
+    public async Task<IActionResult> GetCreditHistoryEmployee([FromQuery] Guid CreditId)
     {
         try
         {
-            var creditsList = await _creditService.GetCreditHistoryAsync(ClientId, CreditId);
+            var creditsList = await _creditService.GetCreditHistoryForEmployeeAsync(CreditId);
             return Ok(creditsList);
         }
         catch (CustomException ex)
@@ -103,12 +103,12 @@ public class CreditControllers : ControllerBase
     [Authorize(Roles = "Client, Employee, Manager")]
     [HttpGet]
     [Route("GetCreditPlans")]
-    public async Task<IActionResult> GetCreditPlans()
+    public async Task<IActionResult> GetCreditPlans([FromQuery] int ElementsNumber, [FromQuery] int PageNumber)
     {
         try
         {
             var Role = User.Claims.ToList()[2].Value;
-            var planList = await _creditService.GetCreditPlanListAsync(Role);
+            var planList = await _creditService.GetCreditPlanListAsync(Role, ElementsNumber, PageNumber);
             return Ok(planList);
         }
         catch (CustomException ex)
@@ -129,6 +129,27 @@ public class CreditControllers : ControllerBase
         try
         {
             var resultId = await _creditService.CreateCreditPlanAsync(NewPlanData);
+            return Ok(resultId);
+        }
+        catch (CustomException ex)
+        {
+            return StatusCode(ex.Code, new { Object = ex.Object, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Employee, Manager")]
+    [HttpPost]
+    [Route("CloseCreditPlan")]
+    public async Task<IActionResult> CloseCreditPlan([FromBody] CloseCreditPlanRequestDTO data)
+    {
+        var Role = User.Claims.ToList()[2].Value;
+        try
+        {
+            var resultId = await _creditService.CloseCreditPlanAsync(data.CreditPlanId);
             return Ok(resultId);
         }
         catch (CustomException ex)
@@ -162,6 +183,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Client")]
     [HttpPost]
     [Route("PayOffTheLoan")]
     public async Task<IActionResult> PayOffTheLoan([FromBody] PayOffTheLoanRequestDTO data)
@@ -182,16 +204,14 @@ public class CreditControllers : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Employee, Manager")]
-    [HttpPost]
-    [Route("CloseCreditPlan")]
-    public async Task<IActionResult> CloseCreditPlan([FromBody] CloseCreditPlanRequestDTO data)
+    /*
+    [HttpGet]
+    [Route("check")]
+    public async Task<IActionResult> check([FromQuery] Guid account)
     {
-        var Role = User.Claims.ToList()[2].Value;
         try
         {
-            var resultId = await _creditService.CloseCreditPlanAsync(data.CreditPlanId);
-            return Ok(resultId);
+            return Ok(await _creditService.CheckIfHaveActiveCreditAsync(account));
         }
         catch (CustomException ex)
         {
@@ -202,4 +222,5 @@ public class CreditControllers : ControllerBase
             return StatusCode(500, ex.Message);
         }
     }
+    */
 }
