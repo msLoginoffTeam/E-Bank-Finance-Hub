@@ -2,7 +2,7 @@
 
 namespace User_Api.Data.DTOs.Responses
 {
-    public class ClientResponse
+    public class UserResponse
     {
         public Guid Id { get; set; }
 
@@ -12,12 +12,12 @@ namespace User_Api.Data.DTOs.Responses
         
         public bool IsBlocked { get; set; }
 
-        public ClientResponse(Client Client)
+        public UserResponse(User User)
         {
-            Id = Client.Id;
-            Email = Client.Email;
-            FullName = Client.FullName;
-            IsBlocked = Client.IsBlocked;
+            Id = User.Id;
+            Email = User.Email;
+            FullName = User.FullName;
+            IsBlocked = User.IsBlocked;
         }
     }
 }

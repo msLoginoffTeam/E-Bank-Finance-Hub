@@ -4,5 +4,6 @@ public enum ClientCreditStatusEnum
 {
     Open,
     Closed,
+    DoublePercentage,
     Expired
 }

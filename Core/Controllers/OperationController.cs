@@ -26,7 +26,7 @@ namespace Core.Controllers
         /// История операций
         /// </summary>
         [Authorize(Roles = "Client, Manager, Employee")]
-        [HttpPost]
+        [HttpGet]
         [Route("{TargetAccountId}/operations")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult getOperations(Guid TargetAccountId)

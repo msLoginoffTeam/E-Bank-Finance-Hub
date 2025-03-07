@@ -1,7 +1,6 @@
 ﻿using CreditService_Patterns.Models.innerModels;
-using System.ComponentModel.DataAnnotations;
 
-namespace CreditService_Patterns.Models.requestModels;
+namespace Credit_Api.Models.responseModels;
 
 public class CreditFullDataResponseDTO
 {

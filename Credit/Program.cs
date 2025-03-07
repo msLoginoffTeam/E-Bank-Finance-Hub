@@ -12,6 +12,9 @@ using UserApi.Services.Utils.TokenGenerator;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("creditappsettings.Development.json", optional: true, reloadOnChange: true);
+
 builder.Services.AddDbContext<CreditServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CreditServiceContext")));
 
@@ -96,7 +99,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("DailyTrigger")
-        .WithCronSchedule("0 0 0 * * ?")
+        .WithCronSchedule("*/20 * * * * ?")
     );
 });
 
@@ -109,6 +112,7 @@ using (var scope = app.Services.CreateScope())
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
 }
+app.UseCors("AllowAllOrigins");
 
 if (app.Environment.IsDevelopment())
 {

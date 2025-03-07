@@ -34,7 +34,7 @@ namespace UserApi.Services
             User? User = _context.Users.FirstOrDefault(User => User.Email == Email);
             if (User == null)
             {
-                throw new ErrorException(404, "Пользователь с такой почтой не найден.");
+                throw new ErrorException(400, "Пользователь с такой почтой не найден.");
             }
             return User;
         }
@@ -42,6 +42,12 @@ namespace UserApi.Services
         public List<Client> GetClients()
         {
             return _context.Users.OfType<Client>().ToList();
+        }
+
+        public void EditUser(User User)
+        {
+            _context.Users.Update(User);
+            _context.SaveChanges();
         }
 
         public void RegisterUser(User User)

@@ -27,7 +27,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> createUser(Role Role, CreateUserRequest Request)
+        public ActionResult<TokenResponse> createUser(Role Role, UserDTO Request)
         {
             try
             {
@@ -69,6 +69,7 @@ namespace UserApi.Controllers
         {
             User User = _userService.GetUserByLogin(Request.Email);
             if (User.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
+            if (User.Password != Request.Password) { throw new ErrorException(400, "Пароль не подходит."); }
             var token = _userService.LoginUser(User);
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
@@ -86,23 +87,82 @@ namespace UserApi.Controllers
             var UserId = User.Claims.ToList()[0].Value;
 
             User user = _userService.GetUserById(new Guid(UserId));
+            if (user.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
             var token = _userService.Refresh(user, Request.Headers.Authorization.ToString().Substring(7));
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
         }
 
+
+        /// <summary>  
+        /// Получение профиля пользователя
+        /// </summary>
+        [Authorize(Roles = "Client, Employee, Manager")]
+        [HttpGet]
+        [Route("api/client/profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<TokenResponse> getProfile(Guid? ClientId)
+        {
+            var UserId = base.User.Claims.ToList()[0].Value;
+            var Role = base.User.Claims.ToList()[2].Value;
+
+            User User;
+            if (Role == "Employee" || Role == "Manager")
+            {
+                if (ClientId != null) User = _userService.GetUserById((Guid)ClientId);
+                else User = _userService.GetUserById(new Guid(UserId));
+            }
+            else
+            {
+                User = _userService.GetUserById(new Guid(UserId));
+            }
+
+            return Ok(new UserResponse(User));
+        }
+
+        /// <summary>  
+        /// Изменение профиля пользователя
+        /// </summary>
+        [Authorize(Roles = "Client, Employee, Manager")]
+        [HttpPut]
+        [Route("api/client/profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<TokenResponse> setProfile(Guid? ClientId, UserDTO UserDTO)
+        {
+            var UserId = base.User.Claims.ToList()[0].Value;
+            var Role = base.User.Claims.ToList()[2].Value;
+
+            User User;
+            if (Role == "Employee" || Role == "Manager")
+            {
+                if (ClientId != null) User = _userService.GetUserById((Guid)ClientId);
+                else User = _userService.GetUserById(new Guid(UserId));
+            }
+            else
+            {
+                User = _userService.GetUserById(new Guid(UserId));
+            }
+            if (_userService.GetUserByLogin(UserDTO.Email) != null) throw new ErrorException(400, "На эту почту уже зарегистрирован пользователь.");
+            User.Edit(UserDTO);
+
+            _userService.EditUser(User);
+
+            return Ok(new UserResponse(User));
+        }
+
+
         /// <summary>  
         /// Получение всех клиентов
         /// </summary>
         [Authorize(Roles = "Employee, Manager")]
-        [HttpPost]
+        [HttpGet]
         [Route("api/clients/all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<TokenResponse> getClients()
         {
             List<Client> Clients = _userService.GetClients();
 
-            return Ok(Clients.Select(Client => new ClientResponse(Client)));
+            return Ok(Clients.Select(Client => new UserResponse(Client)));
         }
 
         /// <summary>  
