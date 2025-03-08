@@ -73,6 +73,8 @@ namespace Core.Controllers
             var ClientId = User.Claims.ToList()[0].Value;
             Account Account = _accountService.GetAccount(AccountId, new Guid(ClientId));
 
+            if (Account.IsClosed == true) throw new ErrorException(400, "Счет уже закрыт");
+
             _accountService.CloseAccount(Account);
 
             return Ok();

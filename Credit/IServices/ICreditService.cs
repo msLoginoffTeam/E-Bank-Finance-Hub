@@ -25,5 +25,5 @@ public interface ICreditService
     Task PayOffTheLoanAutomaticAsync();
     Task PercentAsync();
     Task<ClientCreditDbModel> GetCredit(Guid CreditId);
-    Task<bool> CheckIfHaveActiveCreditAsync(Guid AccountId);
+    bool CheckIfHaveActiveCreditAsync(Guid AccountId);
 }

@@ -607,14 +607,14 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<bool> CheckIfHaveActiveCreditAsync(Guid AccountId)
+    public bool CheckIfHaveActiveCreditAsync(Guid AccountId)
     {
         try
         {
-            var creditsList = await _creditContext.Credit
+            var creditsList = _creditContext.Credit
                     .Include(credit => credit.CreditPlan)
                     .Where(credit => credit.AccountId == AccountId && credit.Status != ClientCreditStatusEnum.Closed)
-                    .CountAsync();
+                    .Count();
 
             return creditsList > 0;
         }
