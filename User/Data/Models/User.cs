@@ -1,4 +1,6 @@
-﻿using UserApi.Data.DTOs.Requests;
+﻿using System.Security.Cryptography;
+using System.Text;
+using UserApi.Data.DTOs.Requests;
 
 namespace UserApi.Data.Models
 {
@@ -19,19 +21,19 @@ namespace UserApi.Data.Models
         public Role Role { get; set; }
 
         protected User() {}
-        protected User(UserDTO Request)
+        protected User(UserDTO UserDTO)
         {
             Id = Guid.NewGuid();
-            Email = Request.Email;
-            Password = Request.Password;
-            FullName = Request.FullName;
+            Email = UserDTO.Email;
+            Password = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(UserDTO.Password)));
+            FullName = UserDTO.FullName;
             IsBlocked = false;
         }
 
         public void Edit(UserDTO UserDTO)
         {
             Email = UserDTO.Email;
-            Password = UserDTO.Password;
+            Password = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(UserDTO.Password)));
             FullName = UserDTO.FullName;
         }
     }

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Credit_Api.Services.Utils;
 using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Services;
@@ -18,7 +19,11 @@ builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
 builder.Services.AddDbContext<CreditServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CreditServiceContext")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
 {
@@ -41,6 +46,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
@@ -55,9 +61,12 @@ builder.Services.AddSwaggerGen(options =>
             new List<string>()
         }
     });
+
+    options.SchemaFilter<EnumSchemaFilter>();
 });
 
 builder.Services.AddScoped<ICreditService, CreditService>();
+builder.Services.AddSingleton<CreditService_Patterns.Services.Utils.RabbitMQ>();
 
 TokenGeneratorConfiguration tokenGeneratorConfiguration = new TokenGeneratorConfiguration();
 builder.Configuration.Bind("Authentication", tokenGeneratorConfiguration);
@@ -111,6 +120,9 @@ using (var scope = app.Services.CreateScope())
 {
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
+
+    var bus = app.Services.GetRequiredService<CreditService_Patterns.Services.Utils.RabbitMQ>();
+    bus = new CreditService_Patterns.Services.Utils.RabbitMQ(app.Services);
 }
 app.UseCors("AllowAllOrigins");
 

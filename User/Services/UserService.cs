@@ -16,7 +16,7 @@ namespace UserApi.Services
         {
             _tokenGenerator = tokenGenerator;
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
         }
 
         public User GetUserById(Guid UserId)
@@ -42,6 +42,11 @@ namespace UserApi.Services
         public List<Client> GetClients()
         {
             return _context.Users.OfType<Client>().ToList();
+        }
+
+        public List<Employee> GetEmployees()
+        {
+            return _context.Users.OfType<Employee>().ToList();
         }
 
         public void EditUser(User User)

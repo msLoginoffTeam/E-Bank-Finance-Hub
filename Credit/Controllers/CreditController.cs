@@ -1,5 +1,4 @@
-﻿using Core.Data.Models;
-using Credit_Api.Models.requestModels;
+﻿using Credit_Api.Models.requestModels;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.innerModels;
 using hitscord_net.Models.requestModels;
@@ -205,6 +204,7 @@ public class CreditControllers : ControllerBase
         }
     }
 
+    /*
     [HttpGet]
     [Route("check")]
     public async Task<IActionResult> check([FromQuery] Guid account)
@@ -222,4 +222,5 @@ public class CreditControllers : ControllerBase
             return StatusCode(500, ex.Message);
         }
     }
+    */
 }

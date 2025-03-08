@@ -1,6 +1,7 @@
 ﻿using Core.Data;
 using Core.Data.Models;
 using Core.Services.Utils.ErrorHandling;
+using Core_Api.Data.DTOs.Requests;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,7 @@ namespace Core.Services
         public AccountService(AppDBContext context)
         {
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
         }
 
         public Client GetClient(Guid ClientId)
@@ -58,7 +59,7 @@ namespace Core.Services
 
         public List<Account> GetAccounts(Guid ClientId)
         {
-            return _context.Accounts.Where(Account => Account.Client.Id == ClientId && Account.IsClosed == false).Include(Account => Account.Client).ToList();
+            return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
         }
 
         public void CreateClient(Guid ClientId)
@@ -75,7 +76,7 @@ namespace Core.Services
 
         public void CloseAccount(Account Account)
         {
-            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id);
+            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
 
             if (!AccountHaveCredit)
             {

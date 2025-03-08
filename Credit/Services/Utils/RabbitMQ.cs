@@ -1,8 +1,5 @@
-﻿using Core.Data.DTOs.Requests;
-using Core.Data.DTOs.Responses;
-using Core.Data.Models;
-using Core.Services.Utils.ErrorHandling;
-using CoreApi.Models.innerModels;
+﻿using Core_Api.Data.DTOs.Requests;
+using CreditService_Patterns.IServices;
 using EasyNetQ;
 
 namespace CreditService_Patterns.Services.Utils
@@ -16,17 +13,17 @@ namespace CreditService_Patterns.Services.Utils
         {
             _serviceProvider = serviceProvider;
 
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
 
-            _bus.Rpc.RespondAsync<Guid, bool>(AccountId =>
+            _bus.Rpc.Respond<Guid, bool>(AccountId =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var CreditService = scope.ServiceProvider.GetRequiredService<CreditService>();
-
+                    var CreditService = scope.ServiceProvider.GetRequiredService<ICreditService>();
+                    
                     return CreditService.CheckIfHaveActiveCreditAsync(AccountId);
                 }
-            });
+            }, configure: x => x.WithQueueName("AccountCreditCheck"));
         }
     }
 }

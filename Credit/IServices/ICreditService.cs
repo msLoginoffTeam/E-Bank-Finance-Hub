@@ -4,7 +4,6 @@ using CreditService_Patterns.Models.innerModels;
 using CreditService_Patterns.Models.responseModels;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
-using Microsoft.AspNetCore.Mvc;
 using UserApi.Data.Models;
 
 namespace CreditService_Patterns.IServices;
@@ -26,5 +25,5 @@ public interface ICreditService
     Task PayOffTheLoanAutomaticAsync();
     Task PercentAsync();
     Task<ClientCreditDbModel> GetCredit(Guid CreditId);
-    Task<bool> CheckIfHaveActiveCreditAsync(Guid AccountId);
+    bool CheckIfHaveActiveCreditAsync(Guid AccountId);
 }

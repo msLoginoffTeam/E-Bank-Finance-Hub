@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using User_Api.Data.DTOs.Responses;
@@ -27,7 +29,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> createUser(Role Role, UserDTO Request)
+        public ActionResult createUser(Role Role, UserDTO Request)
         {
             try
             {
@@ -69,7 +71,7 @@ namespace UserApi.Controllers
         {
             User User = _userService.GetUserByLogin(Request.Email);
             if (User.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
-            if (User.Password != Request.Password) { throw new ErrorException(400, "Пароль не подходит."); }
+            if (User.Password != Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Request.Password)))) { throw new ErrorException(400, "Пароль не подходит."); }
             var token = _userService.LoginUser(User);
 
             return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
@@ -101,7 +103,7 @@ namespace UserApi.Controllers
         [HttpGet]
         [Route("api/client/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> getProfile(Guid? ClientId)
+        public ActionResult<UserResponse> getProfile(Guid? ClientId)
         {
             var UserId = base.User.Claims.ToList()[0].Value;
             var Role = base.User.Claims.ToList()[2].Value;
@@ -127,7 +129,7 @@ namespace UserApi.Controllers
         [HttpPut]
         [Route("api/client/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> setProfile(Guid? ClientId, UserDTO UserDTO)
+        public ActionResult setProfile(Guid? ClientId, UserDTO UserDTO)
         {
             var UserId = base.User.Claims.ToList()[0].Value;
             var Role = base.User.Claims.ToList()[2].Value;
@@ -156,13 +158,27 @@ namespace UserApi.Controllers
         /// </summary>
         [Authorize(Roles = "Employee, Manager")]
         [HttpGet]
-        [Route("api/clients/all")]
+        [Route("api/clients")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> getClients()
+        public ActionResult<List<UserResponse>> getClients()
         {
             List<Client> Clients = _userService.GetClients();
 
             return Ok(Clients.Select(Client => new UserResponse(Client)));
+        }
+
+        /// <summary>  
+        /// Получение всех сотрудников
+        /// </summary>
+        [Authorize(Roles = "Manager")]
+        [HttpGet]
+        [Route("api/employees")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<List<UserResponse>> getEmployees()
+        {
+            List<Employee> Employees = _userService.GetEmployees();
+
+            return Ok(Employees.Select(Employee => new UserResponse(Employee)));
         }
 
         /// <summary>  
@@ -172,7 +188,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("block/{UserId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> blockUser(Guid UserId)
+        public ActionResult blockUser(Guid UserId)
         {
             var Role = User.Claims.ToList()[2].Value;
             User BlockedUser = _userService.GetUserById(UserId);
@@ -199,7 +215,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("unblock/{UserId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> unblockUser(Guid UserId)
+        public ActionResult unblockUser(Guid UserId)
         {
             var Role = User.Claims.ToList()[2].Value;
             User UnblockedUser = _userService.GetUserById(UserId);

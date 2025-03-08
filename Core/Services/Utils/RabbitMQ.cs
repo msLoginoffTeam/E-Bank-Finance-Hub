@@ -16,7 +16,7 @@ namespace Core.Services.Utils
         {
             _serviceProvider = serviceProvider;
 
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
 
             _bus.PubSub.Subscribe<Guid>("CreatedUserId_Core", ClientId =>
             {
@@ -73,10 +73,10 @@ namespace Core.Services.Utils
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
                     var account = accountService.GetAccount(AccountId);
-                    if (account == null) { return false; }
+                    if (account == null || account.IsClosed == true) { return false; }
                     else return true;
                 }
-            });
+            }, configure: x => x.WithQueueName("AccountExistCheck"));
         }
     }
 }

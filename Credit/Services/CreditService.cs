@@ -12,7 +12,6 @@ using EasyNetQ;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
 using Microsoft.EntityFrameworkCore;
-using UserApi.Data.Models;
 
 namespace CreditService_Patterns.Services;
 
@@ -304,7 +303,7 @@ public class CreditService : ICreditService
             await _creditContext.Plan.AddAsync(newPlan);
             await _creditContext.SaveChangesAsync();
 
-            return (new CreditPlanResponse 
+            return (new CreditPlanResponse
             {
                 Id = newPlan.Id,
                 PlanName = newPlan.PlanName,
@@ -375,7 +374,7 @@ public class CreditService : ICreditService
 
             using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
             {
-                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId);
+                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId, x => x.WithQueueName("AccountExistCheck"));
                 if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
             }
 
@@ -443,7 +442,7 @@ public class CreditService : ICreditService
                     AmountInRubles = newPayment.PaymentAmount,
                     OperationType = OperationType.Outcome
                 };
-                
+
                 var response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), ErrorResponse?>((credit.AccountId, request));
 
                 if (response != null)
@@ -495,16 +494,16 @@ public class CreditService : ICreditService
 
             foreach (var credit in creditsList)
             {
-                if(credit.ClosingDate <  DateTime.UtcNow)
+                if (credit.ClosingDate < DateTime.UtcNow)
                 {
                     credit.Status = ClientCreditStatusEnum.Expired;
                 }
                 ErrorResponse? response;
 
-                var PaymentAmount = credit.Status == ClientCreditStatusEnum.Expired 
-                    ? 
-                        MathF.Round(credit.RemainingAmount / 10) 
-                    : 
+                var PaymentAmount = credit.Status == ClientCreditStatusEnum.Expired
+                    ?
+                        MathF.Round(credit.RemainingAmount / 10)
+                    :
                         MathF.Round(credit.RemainingAmount / (int)Math.Ceiling((credit.ClosingDate - DateTime.UtcNow).TotalSeconds / 20.0), 2);
 
                 PaymentAmount = PaymentAmount > credit.RemainingAmount ? credit.RemainingAmount : PaymentAmount;
@@ -569,7 +568,7 @@ public class CreditService : ICreditService
 
             foreach (var credit in creditsList)
             {
-                if(credit.Status == ClientCreditStatusEnum.Open)
+                if (credit.Status == ClientCreditStatusEnum.Open)
                 {
                     credit.RemainingAmount *= 1 + (credit.CreditPlan.PlanPercent / 100);
                 }
@@ -608,14 +607,14 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<bool> CheckIfHaveActiveCreditAsync(Guid AccountId)
+    public bool CheckIfHaveActiveCreditAsync(Guid AccountId)
     {
         try
         {
-            var creditsList = await _creditContext.Credit
+            var creditsList = _creditContext.Credit
                     .Include(credit => credit.CreditPlan)
                     .Where(credit => credit.AccountId == AccountId && credit.Status != ClientCreditStatusEnum.Closed)
-                    .CountAsync();
+                    .Count();
 
             return creditsList > 0;
         }
