@@ -1,0 +1,19 @@
+name: Build and Deploy Docker Compose  
+
+on:  
+  push:  
+    branches:  
+      - main 
+      
+jobs:  
+  build:  
+    runs-on: self-hosted 
+    steps:  
+      - name: Checkout code  
+        uses: actions/checkout@v2  
+
+      - name: Build and Start Services  
+        run: |
+          docker-compose down
+          docker system prune -af
+          docker-compose up -d --build

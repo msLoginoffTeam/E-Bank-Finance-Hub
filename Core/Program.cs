@@ -1,6 +1,5 @@
 using Core.Data;
 using Core.Services;
-using Core.Services.Utils;
 using Core.Services.Utils.ErrorHandling;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using UserApi.Services.Utils.TokenGenerator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-
+builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("coreappsettings.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DataBase")));
 
@@ -112,6 +113,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowAllOrigins");
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 

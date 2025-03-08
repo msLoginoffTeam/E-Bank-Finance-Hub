@@ -1,6 +1,8 @@
 ﻿using Core.Data;
 using Core.Data.Models;
 using Core.Services.Utils.ErrorHandling;
+using Core_Api.Data.DTOs.Requests;
+using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 
 namespace Core.Services
@@ -8,14 +10,16 @@ namespace Core.Services
     public class AccountService
     {
         private readonly AppDBContext _context;
+        private readonly IBus _bus;
         public AccountService(AppDBContext context)
         {
             _context = context;
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
         }
 
         public Client GetClient(Guid ClientId)
         {
-            Client? Client = _context.Clients.FirstOrDefault(Client => Client.Id == ClientId);
+            Client? Client = _context.Clients.FirstOrDefault(cli => cli.Id == ClientId);
 
             if (Client == null)
             {
@@ -41,6 +45,18 @@ namespace Core.Services
             return Account;
         }
 
+        public Account GetAccount(Guid AccountId)
+        {
+            Account? Account = _context.Accounts.Include(Account => Account.Client).FirstOrDefault(Account => Account.Id == AccountId);
+
+            if (Account == null)
+            {
+                throw new ErrorException(404, "Счета с таким Id нет.");
+            }
+
+            return Account;
+        }
+
         public List<Account> GetAccounts(Guid ClientId)
         {
             return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
@@ -58,10 +74,16 @@ namespace Core.Services
             _context.SaveChanges();
         }
 
-        public void DeleteAccount(Account Account)
+        public void CloseAccount(Account Account)
         {
-            _context.Accounts.Remove(Account);
-            _context.SaveChanges();
+            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
+
+            if (!AccountHaveCredit)
+            {
+                Account.IsClosed = true;
+                _context.SaveChanges();
+            }
+            else throw new ErrorException(403, "На этом счету есть кредит");
         }
     }
 }
