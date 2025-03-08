@@ -44,6 +44,11 @@ namespace UserApi.Services
             return _context.Users.OfType<Client>().ToList();
         }
 
+        public List<Employee> GetEmployees()
+        {
+            return _context.Users.OfType<Employee>().ToList();
+        }
+
         public void EditUser(User User)
         {
             _context.Users.Update(User);

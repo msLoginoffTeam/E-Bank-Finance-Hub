@@ -29,7 +29,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> createUser(Role Role, UserDTO Request)
+        public ActionResult createUser(Role Role, UserDTO Request)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace UserApi.Controllers
         [HttpGet]
         [Route("api/client/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> getProfile(Guid? ClientId)
+        public ActionResult<UserResponse> getProfile(Guid? ClientId)
         {
             var UserId = base.User.Claims.ToList()[0].Value;
             var Role = base.User.Claims.ToList()[2].Value;
@@ -129,7 +129,7 @@ namespace UserApi.Controllers
         [HttpPut]
         [Route("api/client/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> setProfile(Guid? ClientId, UserDTO UserDTO)
+        public ActionResult setProfile(Guid? ClientId, UserDTO UserDTO)
         {
             var UserId = base.User.Claims.ToList()[0].Value;
             var Role = base.User.Claims.ToList()[2].Value;
@@ -158,13 +158,27 @@ namespace UserApi.Controllers
         /// </summary>
         [Authorize(Roles = "Employee, Manager")]
         [HttpGet]
-        [Route("api/clients/all")]
+        [Route("api/clients")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> getClients()
+        public ActionResult<List<UserResponse>> getClients()
         {
             List<Client> Clients = _userService.GetClients();
 
             return Ok(Clients.Select(Client => new UserResponse(Client)));
+        }
+
+        /// <summary>  
+        /// Получение всех сотрудников
+        /// </summary>
+        [Authorize(Roles = "Manager")]
+        [HttpGet]
+        [Route("api/employees")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<List<UserResponse>> getEmployees()
+        {
+            List<Employee> Employees = _userService.GetEmployees();
+
+            return Ok(Employees.Select(Employee => new UserResponse(Employee)));
         }
 
         /// <summary>  
@@ -174,7 +188,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("block/{UserId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> blockUser(Guid UserId)
+        public ActionResult blockUser(Guid UserId)
         {
             var Role = User.Claims.ToList()[2].Value;
             User BlockedUser = _userService.GetUserById(UserId);
@@ -201,7 +215,7 @@ namespace UserApi.Controllers
         [HttpPost]
         [Route("unblock/{UserId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<TokenResponse> unblockUser(Guid UserId)
+        public ActionResult unblockUser(Guid UserId)
         {
             var Role = User.Claims.ToList()[2].Value;
             User UnblockedUser = _userService.GetUserById(UserId);
