@@ -27,6 +27,7 @@ export const register = (userData: RegisterData) => async () => {
         await AuthStoreAPI.register(userData);
         return { success: true };
     } catch (error: any) {
+        console.log(error);
         return { success: false, message: error.response?.data?.message || 'Ошибка регистрации' };
     }
 };

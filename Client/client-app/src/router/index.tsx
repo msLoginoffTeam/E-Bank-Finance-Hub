@@ -4,6 +4,7 @@ import {useAppSelector} from "../hooks/redux.ts";
 import {LoginPage} from "../pages/LoginPage.tsx";
 import {RegisterPage} from "../pages/RegisterPage.tsx";
 import {DashboardPage} from "../pages/DashboardPage.tsx";
+import {AccountsPage} from "../pages/AccountsPage.tsx";
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
     const token = useAppSelector((state) => state.auth.token);
@@ -23,6 +24,15 @@ export const AppRouter = () => (
                 element={
                     <PrivateRoute>
                         <DashboardPage />
+                    </PrivateRoute>
+                }
+            />
+
+            <Route
+                path="/accounts"
+                element={
+                    <PrivateRoute>
+                        <AccountsPage />
                     </PrivateRoute>
                 }
             />
