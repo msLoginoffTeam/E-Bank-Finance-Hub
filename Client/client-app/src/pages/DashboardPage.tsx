@@ -1,5 +1,5 @@
 import { Button, Container, Grid, Title, Card, Stack } from '@mantine/core';
-import { useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { logout } from '../store/AuthStore';
@@ -7,11 +7,14 @@ import { useDashboardData } from '../hooks/useDashBoardData';
 import { DashboardAccounts } from '../components/dashboard/DashboardAccounts';
 import { DashboardOperations } from '../components/dashboard/DashboardOperations';
 import {OpenAccountModal} from "../modals/OpenAccountModel.tsx";
+import {useCreditsQuery} from "../queries/credits.queries.ts";
+import {CreditCard} from "../components/credits/CreditCard.tsx";
 
 export const DashboardPage = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const token = useAppSelector((state) => state.auth.token);
+    const { data: credits } = useCreditsQuery();
 
     useEffect(() => {
         if (!token) navigate('/login');
@@ -22,6 +25,8 @@ export const DashboardPage = () => {
     const { accounts, operations, isLoading } = useDashboardData();
 
     if (isLoading) return <p>Загрузка...</p>;
+
+    console.log(credits)
 
     return (
         <Container size="xl" py="xl">
@@ -47,11 +52,10 @@ export const DashboardPage = () => {
                     <Card shadow="lg" p="md" mt="lg">
                         <Title order={3} mb="sm">Кредиты</Title>
                         <Stack>
-                            <Button variant="outline" onClick={() => setIsOpenAccountModal(true)}>
-                                Открыть счет
-                            </Button>
-                            <Button variant="outline">
-                                Оформить кредит
+                            {credits?.length ? <CreditCard credit={credits?.[0]} onPayOff={() => navigate(`/credits/${credits?.[0].id}`)}></CreditCard> : null}
+
+                            <Button variant="outline" component={Link} to="/credits">
+                                Все кредиты
                             </Button>
                         </Stack>
                     </Card>

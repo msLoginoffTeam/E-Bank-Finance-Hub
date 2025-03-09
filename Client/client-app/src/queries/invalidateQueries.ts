@@ -19,8 +19,17 @@ export const invalidateCredits = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.credits() });
 };
 
-export const invalidateCredit = async (creditId: string) => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.credit(creditId) });
+export const invalidateCreditDetails = async (creditId: string) => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.creditDetails(creditId) });
+};
+
+export const invalidateCreditOperations = async (creditId: string) => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.creditOperations(creditId) });
+};
+
+// Инвалидация тарифов кредитов
+export const invalidateCreditPlans = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.creditPlans() });
 };
 
 export const invalidateUserProfile = async () => {

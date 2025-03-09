@@ -4,7 +4,11 @@ export const queryKeys = {
     accountOperations: (accountId: string) => ['accountOperations', accountId],
 
     credits: () => ['credits'],
-    credit: (creditId: string) => ['credit', creditId],
+    creditDetails: (creditId: string) => ['creditDetails', creditId],
+    creditOperations: (creditId: string) => ['creditOperations', creditId], // История платежей по кредиту
+    creditPlans: () => ['creditPlans'], // Доступные кредитные тарифы
 
     userProfile: () => ['userProfile'],
+
+    allOperations: () => ['allOperations']
 };

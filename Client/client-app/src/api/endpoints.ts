@@ -4,4 +4,4 @@
 
 export const AUTH_API = 'http://localhost:8082/api';
 export const ACCOUNTS_API = 'http://localhost:8083/api';
-export const CREDITS_API = 'http://localhost:8081/api';
+export const CREDITS_API = 'http://localhost:8081/Api';
