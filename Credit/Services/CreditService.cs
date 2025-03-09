@@ -374,7 +374,7 @@ public class CreditService : ICreditService
 
             using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
             {
-                var AccountExists = await bus.Rpc.RequestAsync<Guid, bool>(NewCreditData.AccountId, x => x.WithQueueName("AccountExistCheck"));
+                var AccountExists = await bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
                 if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
             }
 
@@ -385,7 +385,7 @@ public class CreditService : ICreditService
                 AccountId = NewCreditData.AccountId,
                 Amount = NewCreditData.Amount,
                 ClosingDate = NewCreditData.ClosingDate,
-                RemainingAmount = NewCreditData.Amount,
+                RemainingAmount = NewCreditData.Amount * (1 + (creditPlanCheck.PlanPercent/100)),
                 Status = ClientCreditStatusEnum.Open
             };
 
