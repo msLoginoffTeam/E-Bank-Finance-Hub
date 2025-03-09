@@ -14,9 +14,9 @@ import { useDisclosure } from '@mantine/hooks';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect } from 'react';
 
 import { useAppDispatch, useAppSelector } from '~/hooks/redux';
+import { PaymentItem } from '~/modules/ClientDetails/components/PaymentItem';
 import {
   ClientCreditForEmployeeResponse,
   ClientCreditStatus,
@@ -43,10 +43,6 @@ export const CreditItem = ({
     }
     toggle();
   };
-
-  useEffect(() => {
-    console.log(paymentHistory.length);
-  }, [paymentHistory]);
 
   return (
     <Card padding="md" radius="xl" shadow="md" withBorder>
@@ -107,28 +103,12 @@ export const CreditItem = ({
                   <ScrollArea.Autosize mah={300} p="md">
                     <Stack gap="xs">
                       {paymentHistory.map((op, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <Card key={index} padding="md" radius="xl" withBorder>
-                          <Stack gap="xs">
-                            <Group>
-                              <Text fz="sm" c="dimmed">
-                                Сумма:
-                              </Text>
-                              <Text style={{ wordBreak: 'break-all' }}>
-                                {`${op.paymentAmount} ₽`}
-                              </Text>
-                            </Group>
-                            <Text fz="sm" c="dimmed">
-                              {format(
-                                new Date(op.paymentDate),
-                                'dd MMMM yyyy, HH:mm',
-                                {
-                                  locale: ru,
-                                },
-                              )}
-                            </Text>
-                          </Stack>
-                        </Card>
+                        <PaymentItem
+                          // eslint-disable-next-line react/no-array-index-key
+                          key={index}
+                          paymentAmount={op.paymentAmount}
+                          paymentDate={op.paymentDate}
+                        />
                       ))}
                     </Stack>
                   </ScrollArea.Autosize>

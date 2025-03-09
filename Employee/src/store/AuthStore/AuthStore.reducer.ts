@@ -40,6 +40,7 @@ export const AuthSlice = createSlice({
       state.refreshToken = null;
       localStorage.setItem('accessToken', '');
       localStorage.setItem('refreshToken', '');
+      state.isLoggedIn = false;
     },
   },
   extraReducers: (builder) => {
@@ -64,11 +65,12 @@ export const AuthSlice = createSlice({
         localStorage.setItem('refreshToken', '');
         state.isLoading = false;
         state.isLoggedIn = false;
-        console.log(payload);
         state.error = payload;
       })
+      .addCase(createUser.pending, (state) => {
+        state.error = undefined;
+      })
       .addCase(createUser.rejected, (state, { payload }) => {
-        console.log(payload);
         state.error = payload;
       })
       .addCase(getEmployeeProfile.pending, (state) => {
@@ -85,11 +87,9 @@ export const AuthSlice = createSlice({
         state.error = payload;
       })
       .addCase(blockUser.rejected, (state, { payload }) => {
-        console.log(payload);
         state.error = payload;
       })
       .addCase(unblockUser.rejected, (state, { payload }) => {
-        console.log(payload);
         state.error = payload;
       });
   },

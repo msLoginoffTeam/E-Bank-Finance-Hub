@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Card,
   Collapse,
@@ -10,11 +9,10 @@ import {
   Text,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from '~/hooks/redux';
+import { OperationItem } from '~/modules/ClientDetails/components/OperationItem';
 import { Account, getAccountOperations } from '~/store/AccountsStore';
 
 export const AccountItem = ({
@@ -71,42 +69,14 @@ export const AccountItem = ({
                   <ScrollArea.Autosize mah={300} p="md">
                     <Stack gap="xs">
                       {operations.map((op, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <Card key={index} padding="md" radius="xl" withBorder>
-                          <Stack gap="xs">
-                            <Group>
-                              <Text fz="sm" c="dimmed">
-                                {op.operationType === 'Outcome'
-                                  ? 'Списание:'
-                                  : 'Пополнение:'}
-                              </Text>
-                              <Text
-                                c={
-                                  op.amountInRubles < 0 ||
-                                  op.operationType === 'Outcome'
-                                    ? 'red'
-                                    : 'teal'
-                                }
-                                style={{ wordBreak: 'break-all' }}
-                              >
-                                {`${op.amountInRubles} ₽`}
-                              </Text>
-                            </Group>
-
-                            <Text fz="sm" c="dimmed">
-                              {format(
-                                new Date(op.time),
-                                'dd MMMM yyyy, HH:mm',
-                                {
-                                  locale: ru,
-                                },
-                              )}
-                            </Text>
-                            <Badge color="blue" radius="sm">
-                              {op.operationCategory}
-                            </Badge>
-                          </Stack>
-                        </Card>
+                        <OperationItem
+                          // eslint-disable-next-line react/no-array-index-key
+                          key={index}
+                          operationType={op.operationType}
+                          operationCategory={op.operationCategory}
+                          amountInRubles={op.amountInRubles}
+                          time={op.time}
+                        />
                       ))}
                     </Stack>
                   </ScrollArea.Autosize>

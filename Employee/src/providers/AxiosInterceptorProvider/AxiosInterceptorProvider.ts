@@ -20,8 +20,6 @@ export const AxiosInterceptorProvider = ({
         return response;
       },
       async (error) => {
-        console.log(error.response);
-
         if (
           error.response?.status === 401 &&
           refreshToken &&

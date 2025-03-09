@@ -45,7 +45,9 @@ export const createUser = createAsyncThunk<
     console.log(e);
 
     if (e instanceof AxiosError) {
-      return rejectWithValue(e.response?.data?.message || 'Произошла ошибка');
+      return rejectWithValue(
+        e.response?.data?.message || e.response?.data?.errors.FullName,
+      );
     }
 
     return rejectWithValue('Произошла ошибка');
