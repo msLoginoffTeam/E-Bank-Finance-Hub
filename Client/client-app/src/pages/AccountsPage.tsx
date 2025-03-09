@@ -1,19 +1,19 @@
-import { useAccountsQuery, useOpenAccountMutation } from '../queries/accounts.queries';
-import { Button, Card, Center, Container, Loader, Stack, Text, Title } from '@mantine/core';
+import { useAccountsQuery } from '../queries/accounts.queries';
+import { Card, Center, Container, Loader, Stack, Text, Title } from '@mantine/core';
 
 export const AccountsPage = () => {
     const { data: accounts, isLoading, error } = useAccountsQuery();
-    const { mutate: openAccount, isPending: isOpening } = useOpenAccountMutation();
+    //const { mutate: openAccount, isPending: isOpening } = useOpenAccountMutation();
 
     return (
         <Container size="md" py="xl">
             <Title mb="lg">Мои счета</Title>
 
-            <Center mb="md">
-                <Button onClick={() => openAccount()} loading={isOpening}>
-                    Открыть новый счёт
-                </Button>
-            </Center>
+            {/*<Center mb="md">*/}
+            {/*    <Button onClick={() => openAccount()} loading={isOpening}>*/}
+            {/*        Открыть новый счёт*/}
+            {/*    </Button>*/}
+            {/*</Center>*/}
 
             {isLoading ? (
                 <Center><Loader /></Center>

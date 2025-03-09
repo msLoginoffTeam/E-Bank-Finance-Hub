@@ -4,7 +4,7 @@ import {useOperationsQuery} from "../queries/operations.queries.ts";
 
 export const useDashboardData = () => {
     const { data: accounts, isLoading: isLoadingAccounts } = useAccountsQuery();
-    const { data: credits, isLoading: isLoadingCredits } = useCreditsQuery(3); // Ограничиваем 3 кредитами
+    const { data: credits, isLoading: isLoadingCredits } = useCreditsQuery(); // Ограничиваем 3 кредитами
 
     const sortedAccounts = accounts ? [...accounts].sort((a, b) => Number(!b.isClosed) - Number(!a.isClosed)) : [];
     const limitedAccounts = sortedAccounts ? sortedAccounts.slice(0, 3) : [];
