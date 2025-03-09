@@ -21,6 +21,16 @@ public class DailyJobService : IJob
 
         try
         {
+            //try
+            //{
+            //    await _creditService.PercentAsync();
+            //    _logger.LogInformation("Фоновая задача по обновлению процентов выполнена успешно.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogError($"Ошибка в методе PercentAsync: {ex.Message}");
+            //}
+
             try
             {
                 await _creditService.PayOffTheLoanAutomaticAsync();
@@ -29,16 +39,6 @@ public class DailyJobService : IJob
             catch (Exception ex)
             {
                 _logger.LogError($"Ошибка в методе PayOffTheLoanAutomaticAsync: {ex.Message}");
-            }
-
-            try
-            {
-                await _creditService.PercentAsync();
-                _logger.LogInformation("Фоновая задача по обновлению процентов выполнена успешно.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Ошибка в методе PercentAsync: {ex.Message}");
             }
         }
         catch (Exception ex)

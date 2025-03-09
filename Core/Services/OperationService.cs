@@ -15,6 +15,7 @@ namespace Core.Services
 
         public void MakeOperation(Operation Operation)
         {
+            if (Operation.TargetAccount.IsClosed) throw new ErrorException(403, "Нельзя провести операцию на закрытом счете.");
             if (Operation.OperationType == OperationType.Income)
             {
                 Operation.TargetAccount.BalanceInRubles += Operation.AmountInRubles;
@@ -22,7 +23,7 @@ namespace Core.Services
             else
             {
                 Operation.TargetAccount.BalanceInRubles -= Operation.AmountInRubles;
-                if (Operation.TargetAccount.BalanceInRubles < 0) throw new ErrorException(403, "На счете не хватает денег для операции");
+                if (Operation.TargetAccount.BalanceInRubles < 0) throw new ErrorException(403, "На счете не хватает денег для операции.");
             }
 
             _context.Accounts.Update(Operation.TargetAccount);
@@ -32,7 +33,7 @@ namespace Core.Services
 
         public List<Operation> GetOperations(Account Account)
         {
-            return _context.Operations.Where(Operation => Operation.TargetAccount == Account).ToList();
+            return _context.Operations.Where(Operation => Operation.TargetAccount == Account).OrderByDescending(Operation => Operation.Time).ToList();
         }
     }
 }

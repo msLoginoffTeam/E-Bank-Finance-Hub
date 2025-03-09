@@ -51,11 +51,10 @@ namespace Core.Services.Utils
                     var operationService = scope.ServiceProvider.GetRequiredService<OperationService>();
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    var account = accountService.GetAccount(AccountId);
-                    var operation = new CreditOperation(Request, account);
-
                     try
                     {
+                        var account = accountService.GetAccount(AccountId);
+                        var operation = new CreditOperation(Request, account);
                         operationService.MakeOperation(operation);
                     }
                     catch (ErrorException ex) 
@@ -66,13 +65,13 @@ namespace Core.Services.Utils
                 }
             });
 
-            _bus.Rpc.Respond<Guid, bool>(AccountId =>
+            _bus.Rpc.Respond<(Guid AccountId, Guid ClientId), bool>(tuple =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    var account = accountService.GetAccount(AccountId);
+                    var account = accountService.GetAccount(tuple.AccountId, tuple.ClientId);
                     if (account == null || account.IsClosed == true) { return false; }
                     else return true;
                 }
