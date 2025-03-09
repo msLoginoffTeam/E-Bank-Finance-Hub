@@ -5,6 +5,7 @@ import {LoginPage} from "../pages/LoginPage.tsx";
 import {RegisterPage} from "../pages/RegisterPage.tsx";
 import {DashboardPage} from "../pages/DashboardPage.tsx";
 import {AccountsPage} from "../pages/AccountsPage.tsx";
+import {AccountDetailsPage} from "../pages/AccountDetailsPage.tsx";
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
     const token = useAppSelector((state) => state.auth.token);
@@ -36,6 +37,11 @@ export const AppRouter = () => (
                     </PrivateRoute>
                 }
             />
+            <Route path="/accounts/:accountId" element={
+                <PrivateRoute>
+                    <AccountDetailsPage/>
+                </PrivateRoute>
+            } />
 
             {/* Заглушка на несуществующие маршруты */}
             <Route path="*" element={<Navigate to="/" />} />

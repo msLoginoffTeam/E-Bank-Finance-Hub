@@ -12,7 +12,7 @@ export const OperationList = ({ operations }: { operations: any[] }) => {
                 </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-                {operations ? operations.map(op => <OperationRow key={op.id} operation={op} />) : <Text >Нет операций</Text>}
+                {operations ? operations.map(op => <OperationRow key={op.time} operation={op} />) : <Text >Нет операций</Text>}
             </Table.Tbody>
         </Table>
     );

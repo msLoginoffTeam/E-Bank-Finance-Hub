@@ -6,9 +6,10 @@ export const useDashboardData = () => {
     const { data: accounts, isLoading: isLoadingAccounts } = useAccountsQuery();
     const { data: credits, isLoading: isLoadingCredits } = useCreditsQuery(3); // Ограничиваем 3 кредитами
 
-    const limitedAccounts = accounts ? accounts.slice(0, 3) : [];
+    const sortedAccounts = accounts ? [...accounts].sort((a, b) => Number(!b.isClosed) - Number(!a.isClosed)) : [];
+    const limitedAccounts = sortedAccounts ? sortedAccounts.slice(0, 3) : [];
 
-    const firstAccountId = accounts?.[0]?.id || null;
+    const firstAccountId = limitedAccounts?.[0]?.id || null;
     const { data: operations, isLoading: isLoadingOperations } = useOperationsQuery(firstAccountId, 5);
 
 

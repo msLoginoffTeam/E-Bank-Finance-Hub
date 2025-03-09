@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import {useQuery, useMutation} from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
-import { AccountsStoreAPI } from '../services/accounts.service';
+import {AccountsAPI, AccountsStoreAPI} from '../services/accounts.service';
 import { invalidateAccounts } from './invalidateQueries';
 
 // Получаем список всех счетов
@@ -18,17 +18,28 @@ export const useAccountsQuery = (limit?: number) => {
 };
 
 // Открываем новый счёт
-export const useOpenAccountMutation = () => {
+export const useOpenAccountMutation = (accountName: string) => {
     return useMutation({
-        mutationFn: AccountsStoreAPI.openAccount,
+        mutationFn: () =>  AccountsStoreAPI.openAccount(accountName),
         onSuccess: () => invalidateAccounts(),
     });
 };
 
 // Закрываем счёт
-export const useCloseAccountMutation = () => {
+export const useCloseAccountMutation = (accountId: string) => {
     return useMutation({
-        mutationFn: AccountsStoreAPI.closeAccount,
+        mutationFn: () => AccountsStoreAPI.closeAccount(accountId),
         onSuccess: () => invalidateAccounts(),
     });
 };
+
+export const useTransactionMutation = (accountId: string, type: 'deposit' | 'withdraw') => {
+
+    return useMutation({
+        mutationFn: async (amount: number) => {
+                return AccountsAPI.deposit(accountId, amount, type === "deposit" ? "Income" : "Outcome");
+        },
+        onSuccess: () => invalidateAccounts()
+    });
+};
+
