@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Services;
@@ -18,7 +19,8 @@ builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
 builder.Services.AddDbContext<CreditServiceContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CreditServiceContext")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
 {
