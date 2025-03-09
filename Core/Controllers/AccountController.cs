@@ -1,6 +1,7 @@
 ﻿using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
+using Core.Services.Utils.ErrorHandling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ namespace Core.Controllers
         /// <summary>  
         /// Открытие счета в банке
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "Client")]
         [HttpPost]
         [Route("open")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -37,15 +38,25 @@ namespace Core.Controllers
         /// <summary>  
         /// Получение счетов пользователя
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "Client, Manager, Employee")]
         [HttpGet]
         [Route("all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult getAccounts()
+        public ActionResult getAccounts(Guid? ClientId)
         {
-            var ClientId = User.Claims.ToList()[0].Value;
+            var UserId = User.Claims.ToList()[0].Value;
+            var Role = User.Claims.ToList()[2].Value;
 
-            List<Account> Accounts = _accountService.GetAccounts(new Guid(ClientId));
+            List<Account> Accounts;
+            if (Role == "Client")
+            {
+                Accounts = _accountService.GetAccounts(new Guid(UserId));
+            }
+            else if (ClientId != null)
+            {
+                Accounts = _accountService.GetAccounts((Guid)ClientId);
+            }
+            else throw new ErrorException(400, "Необходимо передать ClientId, если вы менеджер или работник.");
 
             return Ok(Accounts.Select(Account => new AccountResponse(Account)).ToList());
         }
@@ -53,16 +64,18 @@ namespace Core.Controllers
         /// <summary>  
         /// Закрытие счета в банке
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "Client")]
         [HttpDelete]
         [Route("close")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult deleteAccount(Guid AccountId)
+        public ActionResult closeAccount(Guid AccountId)
         {
             var ClientId = User.Claims.ToList()[0].Value;
             Account Account = _accountService.GetAccount(AccountId, new Guid(ClientId));
 
-            _accountService.DeleteAccount(Account);
+            if (Account.IsClosed == true) throw new ErrorException(400, "Счет уже закрыт");
+
+            _accountService.CloseAccount(Account);
 
             return Ok();
         }

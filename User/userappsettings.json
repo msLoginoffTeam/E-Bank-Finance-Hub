@@ -1,7 +1,7 @@
 {
-    "ConnectionStrings": {
-        "DataBase": "Server=localhost;Port=5432;Database=UsersDB;Username=postgres;Password=admin"
-    },
+  "ConnectionStrings": {
+    "DataBase": "Server=userDB;Port=5432;Database=UsersDB;Username=postgres;Password=admin"
+  },
     "Logging": {
         "LogLevel": {
             "Default": "Information",

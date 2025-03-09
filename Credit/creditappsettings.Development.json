@@ -1,6 +1,6 @@
 {
     "ConnectionStrings": {
-        "DataBase": "Server=localhost;Port=5432;Database=CoreDB;Username=postgres;Password=admin"
+        "CreditServiceContext": "Host=creditDB;Port=5432;Database=CreditDB;Username=postgres;Password=admin"
     },
     "Logging": {
         "LogLevel": {
@@ -8,7 +8,6 @@
             "Microsoft.AspNetCore": "Warning"
         }
     },
-    "AllowedHosts": "*",
     "Authentication": {
         "AccessTokenSecret": "eGZ5RlduZXlalksdjf234Z2lqV1QzZkN1TU5sQnasdffad",
         "AccessTokenExpirationSeconds": "600",

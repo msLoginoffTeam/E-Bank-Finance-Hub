@@ -1,4 +1,9 @@
-﻿using EasyNetQ;
+﻿using Core.Data.DTOs.Requests;
+using Core.Data.DTOs.Responses;
+using Core.Data.Models;
+using Core.Services.Utils.ErrorHandling;
+using CoreApi.Models.innerModels;
+using EasyNetQ;
 
 namespace Core.Services.Utils
 {
@@ -11,7 +16,7 @@ namespace Core.Services.Utils
         {
             _serviceProvider = serviceProvider;
 
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _bus = RabbitHutch.CreateBus("host=rabbitmq");
 
             _bus.PubSub.Subscribe<Guid>("CreatedUserId_Core", ClientId =>
             {
@@ -24,7 +29,53 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
+            _bus.PubSub.Subscribe<(Guid AccountId, CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
+            {
+                var (AccountId, Request) = tuple;  
 
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var OperationService = scope.ServiceProvider.GetRequiredService<OperationService>();
+                    var AccountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(AccountId)));
+                }
+            });
+
+            _bus.Rpc.Respond<(Guid AccountId, CreditOperationRequest Request), ErrorResponse?>(tuple =>
+            {
+                var (AccountId, Request) = tuple;
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var operationService = scope.ServiceProvider.GetRequiredService<OperationService>();
+                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    try
+                    {
+                        var account = accountService.GetAccount(AccountId);
+                        var operation = new CreditOperation(Request, account);
+                        operationService.MakeOperation(operation);
+                    }
+                    catch (ErrorException ex) 
+                    {
+                        return new ErrorResponse(ex.status, ex.message);
+                    }
+                    return null;
+                }
+            });
+
+            _bus.Rpc.Respond<Guid, bool>(AccountId =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    var account = accountService.GetAccount(AccountId);
+                    if (account == null || account.IsClosed == true) { return false; }
+                    else return true;
+                }
+            }, configure: x => x.WithQueueName("AccountExistCheck"));
         }
     }
 }

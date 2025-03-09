@@ -20,7 +20,7 @@ namespace UserApi.Services.Utils.TokenGenerator
             {
                 new Claim("Id", UserId.ToString()),
                 new Claim("TokenType", "Access"),
-                new Claim("Role", Role.ToString())
+                new Claim(ClaimTypes.Role, Role.ToString())
             };
 
             DateTime expires = DateTime.UtcNow.AddSeconds(_configuration.AccessTokenExpirationSeconds);
@@ -47,7 +47,7 @@ namespace UserApi.Services.Utils.TokenGenerator
                 new Claim("TokenType", "Refresh"),
             };
 
-            DateTime expires = DateTime.UtcNow.AddSeconds(_configuration.RefreshTokenExpirationHours);
+            DateTime expires = DateTime.UtcNow.AddHours(_configuration.RefreshTokenExpirationHours);
 
             SecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.AccessTokenSecret));
             SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
