@@ -13,6 +13,7 @@ export const CreditDetailsPage = () => {
     const { mutate: payOffCredit } = usePayOffCreditMutation();
 
     if (isLoading) return <p>Загрузка...</p>;
+    if (!credit) return <p>Кредит не найден</p>;
 
     return (
         <Container size="md" py="xl">

@@ -19,7 +19,7 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
     const [closingDate, setClosingDate] = useState<Date | null>(new Date());
 
     const handleSubmit = () => {
-        if (!planId || !accountId || !closingDate) return; // Проверяем, что данные заполнены
+        if (!planId || !accountId || !closingDate) return;
 
         openCredit({
             creditPlanId: planId,
@@ -27,7 +27,7 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
             amount,
             closingDate: closingDate.toISOString()
         }, {
-            onSuccess: onClose // Закрываем модалку после успешного оформления
+            onSuccess: onClose
         });
         console.log(planId, accountId, amount, closingDate.toISOString());
     };

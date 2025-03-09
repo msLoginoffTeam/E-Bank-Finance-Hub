@@ -19,7 +19,7 @@ export const CreditsPage = () => {
                 <Button onClick={() => setOpenModal(true)}>Оформить новый кредит</Button>
                 <SimpleGrid cols={2}>
                     {credits?.map((credit) => (
-                        <CreditCard key={credit.id} credit={credit} onPayOff={() => navigate(`/credits/${credit.id}`)} />
+                        <CreditCard hasOpenButton={true} key={credit.id} credit={credit} onPayOff={() => navigate(`/credits/${credit.id}`)} />
                     ))}
                 </SimpleGrid>
             </Stack>
