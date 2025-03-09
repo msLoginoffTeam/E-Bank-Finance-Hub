@@ -28,7 +28,6 @@ export const Auth = () => {
 
   const handleSubmit = async () => {
     const values = form.getValues();
-    console.log(values);
     const result = await dispatch(loginEmployee({ ...values }));
 
     if (result.meta.requestStatus === 'fulfilled') {

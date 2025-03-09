@@ -1,31 +1,42 @@
 export interface AccountState {
-  accounts: UserAccountsData[];
+  accounts: Account[];
   isLoading: boolean;
   error?: string;
 }
 
-export interface UserAccountsData {
-  userId: string;
-  accounts: Account[];
-}
-
-export interface Operation {
+export interface BaseOperation {
   amountInRubles: number;
   time: Date;
-  operationType: string;
-  operationCategory: string;
+  operationType: OperationType;
+  operationCategory: OperationCategory;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CashOperation extends Operation {}
+export enum OperationType {
+  Income = 'Income',
+  Outcome = 'Outcome',
+}
 
-export interface CreditOperation extends Operation {
+export enum OperationCategory {
+  Credit = 'Credit',
+  Cash = 'Cash',
+}
+
+export interface CashOperation extends BaseOperation {
+  operationCategory: OperationCategory.Cash;
+}
+
+export interface CreditOperation extends BaseOperation {
+  operationCategory: OperationCategory.Credit;
   creditId: string;
 }
+
+export type Operation = CashOperation | CreditOperation;
 
 export interface Account {
   id: string;
   name: string;
-  balance: number;
-  operations: (CashOperation | CreditOperation)[];
+  balanceInRubles: number;
+  isClosed: boolean;
+  operations: Operation[];
+  isLoadingOperations?: boolean;
 }

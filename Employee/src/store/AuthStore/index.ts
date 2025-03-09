@@ -1,5 +1,17 @@
-export { loginEmployee } from './AuthStore.actions';
+export {
+  loginEmployee,
+  createUser,
+  getEmployeeProfile,
+  blockUser,
+  unblockUser,
+} from './AuthStore.actions';
 
-export type { AuthCredentials } from './AuthStore.types';
+export type {
+  AuthCredentials,
+  CreateUser,
+  EmployeeProfile,
+} from './AuthStore.types';
 
-export { AuthReducer } from './AuthStore.reducer';
+export { UserRole } from './AuthStore.types';
+
+export { AuthReducer, setTokens, logout } from './AuthStore.reducer';

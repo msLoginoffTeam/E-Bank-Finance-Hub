@@ -1,5 +1,7 @@
 export interface ClientsState {
   clients: Client[];
+  employees: Client[];
+  client: Client;
   isLoading: boolean;
   error?: string;
 }

@@ -13,7 +13,15 @@ export const Navbar = () => {
         <UnstyledButton className={classes.control}>Главная</UnstyledButton>
       </Link>
       <Link to="/clients" className={classes.link}>
-        <UnstyledButton className={classes.control}>Счета</UnstyledButton>
+        <UnstyledButton className={classes.control}>Клиенты</UnstyledButton>
+      </Link>
+      <Link to="/credits" className={classes.link}>
+        <UnstyledButton className={classes.control}>Кредиты</UnstyledButton>
+      </Link>
+      <Link to="/users" className={classes.link}>
+        <UnstyledButton className={classes.control}>
+          Пользователи
+        </UnstyledButton>
       </Link>
       {!isLoggedIn ? (
         <Link to="/auth" className={classes.link}>

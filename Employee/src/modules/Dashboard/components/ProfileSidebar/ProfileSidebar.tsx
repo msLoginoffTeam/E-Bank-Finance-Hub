@@ -1,8 +1,11 @@
-import { Avatar, Card, Group, Stack, Text, Title } from '@mantine/core';
+import { Avatar, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
+
+import { useAppSelector } from '~/hooks/redux';
 
 export const ProfileSidebar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { profile, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -12,12 +15,18 @@ export const ProfileSidebar = () => {
     return () => clearInterval(timer);
   }, []);
 
+  if (isLoading) {
+    return <Loader color="blue" />;
+  }
+
   return (
-    <Card padding="lg" radius="xl" maw={300}>
+    <Card padding="lg" radius="xl" w="100%" maw={300}>
       <Stack gap="md" align="center" justify="center">
         <Avatar size="xl" />
-        <Title order={4}>Иванов Иван Иванович</Title>
-        <Text c="dimmed">Аккаунт активен</Text>
+        <Title order={4}>{profile.fullName}</Title>
+        <Text c="dimmed">
+          {profile.isBlocked ? 'Аккаунт заблокирован' : 'Аккаунт активен'}
+        </Text>
         <Group>
           <Text c="dimmed">Текущее время:</Text>
           <Text>

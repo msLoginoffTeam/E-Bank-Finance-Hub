@@ -17,8 +17,13 @@ export const ButtonsPanel = () => {
       <BigActionButton
         icon={<CirclePercent />}
         label="Управление тарифами кредитов"
+        onClick={() => navigate('/credits')}
       />
-      <BigActionButton icon={<Users />} label="Управление сотрудниками" />
+      <BigActionButton
+        icon={<Users />}
+        label="Управление клиентами и сотрудниками"
+        onClick={() => navigate('/users')}
+      />
       <BigActionButton
         icon={<Rows3 />}
         label="Открыть список кредитов клиентов"
