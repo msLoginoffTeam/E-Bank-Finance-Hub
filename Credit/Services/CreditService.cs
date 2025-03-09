@@ -366,7 +366,7 @@ public class CreditService : ICreditService
                 throw new CustomException("Taking out a loan for an archive plan is prohibited.", "Get credit", "Plan status", 400);
             }
 
-            if (NewCreditData.ClosingDate < DateTime.UtcNow.AddDays(1))
+            if (NewCreditData.ClosingDate < DateTime.UtcNow)
             {
                 throw new CustomException("The loan closing date cannot be earlier than one day after it was taken out.", "Get credit", "Closing date", 400);
             }

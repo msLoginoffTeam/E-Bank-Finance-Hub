@@ -80,24 +80,5 @@ namespace Core.Controllers
 
             return Ok();
         }
-
-        /// <summary>  
-        /// Операции по кредиту
-        /// </summary>
-        [Authorize(Roles = "Client")]
-        [HttpPost]
-        [Route("{TargetAccountId}/credit")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult makeCreditOperation(Guid TargetAccountId, CreditOperationRequest Request)
-        {
-            var ClientId = User.Claims.ToList()[0].Value;
-            Account Account = _accountService.GetAccount(TargetAccountId, new Guid(ClientId));
-
-            CreditOperation CreditOperation = new CreditOperation(Request, Account);
-
-            _operationService.MakeOperation(CreditOperation);
-
-            return Ok();
-        }
     }
 }
