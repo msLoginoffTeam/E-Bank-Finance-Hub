@@ -17,15 +17,15 @@ export interface CreditPlan {
 }
 
 export enum CreditStatus {
-  Open,
-  Archive,
+  Open = 'Open',
+  Archive = 'Archive',
 }
 
 export enum ClientCreditStatus {
-  Open,
-  Closed,
-  DoublePercentage,
-  Expired,
+  Open = 'Open',
+  Closed = 'Closed',
+  DoublePercentage = 'DoublePercentage',
+  Expired = 'Expired',
 }
 
 export interface ClientCreditForEmployeeResponse {
