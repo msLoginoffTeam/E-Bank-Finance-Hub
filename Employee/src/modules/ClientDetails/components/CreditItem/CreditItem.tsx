@@ -59,7 +59,7 @@ export const CreditItem = ({
         </Group>
         <Group>
           <Text c="dimmed">Сумма:</Text>
-          <Text>{amount}</Text>
+          <Text>{amount} ₽</Text>
         </Group>
         <Group>
           <Text c="dimmed">Дата закрытия:</Text>

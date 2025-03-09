@@ -36,13 +36,12 @@ export const ClientsList = () => {
   const debouncedSearch = useMemo(
     () =>
       debounce((value: string) => {
-        setFilteredClients(
-          clients.filter((client) =>
-            client.fullName.toLowerCase().includes(value.toLowerCase()),
-          ),
+        const searchedClients = clients.filter((client) =>
+          client.fullName.toLowerCase().includes(value.toLowerCase()),
         );
+        setFilteredClients(searchedClients);
       }, 400),
-    [],
+    [clients],
   );
 
   return (
