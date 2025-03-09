@@ -33,7 +33,7 @@ namespace Core.Services
 
         public List<Operation> GetOperations(Account Account)
         {
-            return _context.Operations.Where(Operation => Operation.TargetAccount == Account).OrderBy(Operation => Operation.Time).ToList();
+            return _context.Operations.Where(Operation => Operation.TargetAccount == Account).OrderByDescending(Operation => Operation.Time).ToList();
         }
     }
 }
