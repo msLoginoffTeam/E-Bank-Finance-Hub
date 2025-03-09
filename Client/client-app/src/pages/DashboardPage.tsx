@@ -26,8 +26,7 @@ export const DashboardPage = () => {
 
     if (isLoading) return <p>Загрузка...</p>;
 
-    console.log(credits)
-
+    console.log(credits?.filter(p => p.status !== "Closed"))
     return (
         <Container size="xl" py="xl">
             <Grid gutter="lg">
@@ -52,7 +51,7 @@ export const DashboardPage = () => {
                     <Card shadow="lg" p="md" mt="lg">
                         <Title order={3} mb="sm">Кредиты</Title>
                         <Stack>
-                            {credits?.length ? <CreditCard credit={credits?.[0]} onPayOff={() => navigate(`/credits/${credits?.[0].id}`)}></CreditCard> : null}
+                            {credits?.length ? <CreditCard credit={credits?.filter(p => p.status !== "Closed")?.[0]} onPayOff={() => navigate(`/credits/${credits?.[0].id}`)}></CreditCard> : null}
 
                             <Button variant="outline" component={Link} to="/credits">
                                 Все кредиты

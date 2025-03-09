@@ -18,7 +18,7 @@ export const CreditCard = ({ credit, onPayOff }: CreditCardProps) => {
                 <Text>Дата закрытия: {new Date(credit.closingDate).toLocaleDateString()}</Text>
                 <Text>Статус: {credit.status}</Text>
 
-                {credit.status !== 1 && onPayOff && (
+                {credit.status !== "Closed" && onPayOff && (
                     <Button color="red" onClick={onPayOff} fullWidth>
                         Погасить кредит
                     </Button>

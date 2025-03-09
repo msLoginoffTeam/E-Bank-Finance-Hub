@@ -29,6 +29,7 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
         }, {
             onSuccess: onClose // Закрываем модалку после успешного оформления
         });
+        console.log(planId, accountId, amount, closingDate.toISOString());
     };
 
     return (
@@ -47,7 +48,7 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
                     label="Выберите счёт"
                     placeholder="Выберите счёт"
                     data={accounts?.filter((a: any) => a.status !== 'Closed')
-                        .map((a: any) => ({ value: a.id, label: `Счет ${a.id}` }))}
+                        .map((a: any) => ({ value: a.id, label: `Счет ${a.name}` }))}
                     value={accountId}
                     onChange={setAccountId}
                     disabled={isPending}

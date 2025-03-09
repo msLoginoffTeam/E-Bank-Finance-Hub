@@ -23,9 +23,9 @@ export const AccountCard = ({ account }: { account: any; isDashboard?: boolean }
 
     return (
         <Card shadow="lg" p="md" radius="lg" style={{ opacity: !account.isClosed ? 1 : 0.5 }}>
-            <Text size="lg">Баланс: {account.balance} ₽</Text>
+            <Text size="lg">Баланс: {account.balanceInRubles} ₽</Text>
+            <Text size="sm" color="dimmed">{account.name}</Text>
             <Text size="sm" color="dimmed">Счет №{account.id}</Text>
-
             {!account.isClosed && (
                 <Group grow mt="md">
                     <Button color="green" onClick={() => handleOpenModal('deposit')}>Пополнить</Button>

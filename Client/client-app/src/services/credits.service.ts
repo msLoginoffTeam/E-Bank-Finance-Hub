@@ -4,7 +4,7 @@ import axiosInstance from "../api/axiosInstance.ts";
 
 export const CreditAPI = {
     async getCredits(): Promise<CreditDetails[]> {
-        const response = await axiosInstance.get(`${CREDITS_API}/Credit/GetCreditsList/Client?ElementsNumber=2&PageNumber=1`);
+        const response = await axiosInstance.get(`${CREDITS_API}/Credit/GetCreditsList/Client?ElementsNumber=20&PageNumber=1`);
         return response.data.creditsList as CreditDetails[];
     },
 
@@ -20,6 +20,7 @@ export const CreditAPI = {
     },
 
     async createCredit(data: { accountId: string; creditPlanId: string; amount: number; closingDate: string }) {
+        console.log(data);
         const response = await axiosInstance.post(`${CREDITS_API}/Credit/GetCredit`, data);
         return response.data;
     },

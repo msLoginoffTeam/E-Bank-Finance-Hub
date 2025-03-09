@@ -17,6 +17,6 @@ export type CreditDetails = {
     amount: number;
     closingDate: string;
     remainingAmount: number;
-    status: number; // 0 - Open, 1 - Closed
+    status: string; // 0 - Open, 1 - Closed
     paymentHistory: PaymentHistoryEntry[] | undefined;
 };
