@@ -20,6 +20,8 @@ public class CreditPaymentDbModel
     [ForeignKey(nameof(ClientCreditId))]
     public ClientCreditDbModel ClientCredit { get; set; }
 
+    public required Guid AccountId { get; set; }
+
     [Required]
     public required float PaymentAmount { get; set; }
 
