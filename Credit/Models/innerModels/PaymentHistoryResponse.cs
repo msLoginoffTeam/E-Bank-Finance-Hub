@@ -8,4 +8,5 @@ public class PaymentHistoryResponse
     public required float PaymentAmount { get; set; }
     public required DateTime PaymentDate { get; set; }
     public required PaymentTypeEnum Type { get; set; }
+    public required Guid AccountId { get; set; }
 }

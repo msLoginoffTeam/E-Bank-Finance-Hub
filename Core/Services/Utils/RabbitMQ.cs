@@ -4,6 +4,7 @@ using Core.Data.Models;
 using Core.Services.Utils.ErrorHandling;
 using CoreApi.Models.innerModels;
 using EasyNetQ;
+using UserApi.Data.Models;
 
 namespace Core.Services.Utils
 {
@@ -29,22 +30,22 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
-            _bus.PubSub.Subscribe<(Guid AccountId, CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
+            _bus.PubSub.Subscribe<((Guid AccountId, Guid ClientId), CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
             {
-                var (AccountId, Request) = tuple;  
+                var (Account, Request) = tuple;  
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var OperationService = scope.ServiceProvider.GetRequiredService<OperationService>();
                     var AccountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(AccountId)));
+                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(Account.AccountId, Account.ClientId)));
                 }
             });
 
-            _bus.Rpc.Respond<(Guid AccountId, CreditOperationRequest Request), ErrorResponse?>(tuple =>
+            _bus.Rpc.Respond<((Guid AccountId, Guid ClientId), CreditOperationRequest Request), ErrorResponse?>(tuple =>
             {
-                var (AccountId, Request) = tuple;
+                var (Account, Request) = tuple;
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -53,7 +54,7 @@ namespace Core.Services.Utils
 
                     try
                     {
-                        var account = accountService.GetAccount(AccountId);
+                        var account = accountService.GetAccount(Account.AccountId, Account.ClientId);
                         var operation = new CreditOperation(Request, account);
                         operationService.MakeOperation(operation);
                     }

@@ -170,7 +170,8 @@ public class CreditService : ICreditService
                     Id = payment.Id,
                     PaymentAmount = payment.PaymentAmount,
                     PaymentDate = payment.PaymentDate,
-                    Type = payment.Type
+                    Type = payment.Type,
+                    AccountId = payment.AccountId,
                 })
                 .ToList()
             };
@@ -221,7 +222,8 @@ public class CreditService : ICreditService
                     Id = payment.Id,
                     PaymentAmount = payment.PaymentAmount,
                     PaymentDate = payment.PaymentDate,
-                    Type = payment.Type
+                    Type = payment.Type,
+                    AccountId = payment.AccountId,
                 })
                 .ToList()
             };
@@ -401,7 +403,7 @@ public class CreditService : ICreditService
                     OperationType = OperationType.Income
                 };
 
-                await bus.PubSub.PublishAsync<(Guid, CreditOperationRequest)>((newCredit.AccountId, request));
+                await bus.PubSub.PublishAsync<((Guid, Guid), CreditOperationRequest)>(((newCredit.AccountId, newCredit.ClientId), request));
             }
 
             return newCredit.Id;
@@ -431,7 +433,8 @@ public class CreditService : ICreditService
                 ClientCreditId = paymentData.CreditId,
                 PaymentAmount = paymentData.Amount > credit.RemainingAmount ? credit.RemainingAmount : paymentData.Amount,
                 PaymentDate = DateTime.UtcNow,
-                Type = PaymentTypeEnum.ByClient
+                Type = PaymentTypeEnum.ByClient,
+                AccountId = paymentData.AccountId
             };
 
             using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
@@ -443,7 +446,7 @@ public class CreditService : ICreditService
                     OperationType = OperationType.Outcome
                 };
 
-                var response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), ErrorResponse?>((credit.AccountId, request));
+                var response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((paymentData.AccountId, ClientId), request));
 
                 if (response != null)
                 {
@@ -517,7 +520,7 @@ public class CreditService : ICreditService
 
                 using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
                 {
-                    response = await bus.Rpc.RequestAsync<(Guid, CreditOperationRequest), ErrorResponse?>((credit.AccountId, request));
+                    response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((credit.AccountId, credit.ClientId), request));
                 }
 
                 if (response != null)
@@ -534,7 +537,8 @@ public class CreditService : ICreditService
                         ClientCreditId = credit.Id,
                         PaymentAmount = request.AmountInRubles,
                         PaymentDate = DateTime.UtcNow,
-                        Type = PaymentTypeEnum.ByClient
+                        Type = PaymentTypeEnum.Automatic,
+                        AccountId = credit.AccountId
                     };
 
                     credit.RemainingAmount -= newPayment.PaymentAmount;
