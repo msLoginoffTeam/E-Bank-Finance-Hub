@@ -1,4 +1,5 @@
-﻿using Core.Data.DTOs.Requests;
+﻿using Common.ErrorHandling;
+using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Credit_Api.Models.innerModels;
@@ -8,6 +9,7 @@ using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.dbModels;
 using CreditService_Patterns.Models.innerModels;
 using CreditService_Patterns.Models.responseModels;
+using CreditService_Patterns.Services.Utils;
 using EasyNetQ;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
@@ -18,6 +20,7 @@ namespace CreditService_Patterns.Services;
 public class CreditService : ICreditService
 {
     private readonly CreditServiceContext _creditContext;
+    private readonly CreditRabbit _rabbit;
 
     public CreditService(CreditServiceContext creditContext)
     {

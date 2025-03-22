@@ -1,8 +1,8 @@
-﻿using Core.Data.DTOs.Requests;
+﻿using Common.ErrorHandling;
+using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
-using Core.Services.Utils.ErrorHandling;
 using EasyNetQ;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

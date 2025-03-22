@@ -8,7 +8,7 @@ using UserApi.Data;
 
 #nullable disable
 
-namespace UserApi.Migrations
+namespace User_Api.Migrations
 {
     [DbContext(typeof(AppDBContext))]
     partial class AppDBContextModelSnapshot : ModelSnapshot
@@ -33,50 +33,59 @@ namespace UserApi.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("IsBlocked")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.ToTable("Users");
 
-                    b.HasDiscriminator<int>("Role");
-
-                    b.UseTphMappingStrategy();
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                            Email = "manager@example.com",
+                            FullName = "Менеджер А",
+                            IsBlocked = false
+                        });
                 });
 
-            modelBuilder.Entity("UserApi.Data.Models.Client", b =>
+            modelBuilder.Entity("User_Api.Data.Models.UserRole", b =>
                 {
-                    b.HasBaseType("UserApi.Data.Models.User");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
-                    b.HasDiscriminator().HasValue(0);
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "Role");
+
+                    b.ToTable("UserRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                            Role = 2
+                        });
                 });
 
-            modelBuilder.Entity("UserApi.Data.Models.Employee", b =>
+            modelBuilder.Entity("User_Api.Data.Models.UserRole", b =>
                 {
-                    b.HasBaseType("UserApi.Data.Models.User");
+                    b.HasOne("UserApi.Data.Models.User", "User")
+                        .WithMany("Roles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasDiscriminator().HasValue(1);
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("UserApi.Data.Models.Manager", b =>
+            modelBuilder.Entity("UserApi.Data.Models.User", b =>
                 {
-                    b.HasBaseType("UserApi.Data.Models.Employee");
-
-                    b.HasDiscriminator().HasValue(2);
+                    b.Navigation("Roles");
                 });
 #pragma warning restore 612, 618
         }

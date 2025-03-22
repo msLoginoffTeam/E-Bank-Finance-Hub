@@ -1,23 +1,20 @@
 using System.Reflection;
-using System.Text;
 using System.Text.Json.Serialization;
 using CreditService_Patterns.Contexts;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Quartz;
-using UserApi.Services.Utils.TokenGenerator;
+using Common;
+using CreditService_Patterns.Services.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
                    .AddJsonFile("creditappsettings.Development.json", optional: true, reloadOnChange: true);
 
-builder.Services.AddDbContext<CreditServiceContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("CreditServiceContext")));
+builder.Services.AddDbContext<CreditServiceContext>(options => options.UseNpgsql(Environment.GetEnvironmentVariable("CREDIT_DATABASE_CONNECTION") != null ? Environment.GetEnvironmentVariable("CREDIT_DATABASE_CONNECTION") : builder.Configuration.GetConnectionString("CreditServiceContext")));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -60,32 +57,12 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ICreditService, CreditService>();
-builder.Services.AddSingleton<CreditService_Patterns.Services.Utils.RabbitMQ>();
-
-TokenGeneratorConfiguration tokenGeneratorConfiguration = new TokenGeneratorConfiguration();
-builder.Configuration.Bind("Authentication", tokenGeneratorConfiguration);
-builder.Services.AddSingleton(tokenGeneratorConfiguration);
-builder.Services
-    .AddAuthentication(options =>
-    {
-        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-
-        options.TokenValidationParameters = new TokenValidationParameters()
-        {
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenGeneratorConfiguration.AccessTokenSecret)),
-            ValidIssuer = tokenGeneratorConfiguration.Issuer,
-            ValidAudience = tokenGeneratorConfiguration.Audience,
-            ValidateIssuerSigningKey = true,
-            ValidateIssuer = true,
-            ValidateAudience = true
-        };
-    });
+builder.Services.AddSingleton(rabbit =>
+{
+    var serviceProvider = rabbit.GetRequiredService<IServiceProvider>();
+    return new CreditRabbit(serviceProvider);
+});
+builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -114,9 +91,6 @@ using (var scope = app.Services.CreateScope())
 {
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
-
-    var bus = app.Services.GetRequiredService<CreditService_Patterns.Services.Utils.RabbitMQ>();
-    bus = new CreditService_Patterns.Services.Utils.RabbitMQ(app.Services);
 }
 app.UseCors("AllowAllOrigins");
 

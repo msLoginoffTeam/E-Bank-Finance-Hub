@@ -1,6 +1,6 @@
-﻿using Core.Data;
+﻿using Common.ErrorHandling;
+using Core.Data;
 using Core.Data.Models;
-using Core.Services.Utils.ErrorHandling;
 using Core_Api.Data.DTOs.Requests;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;

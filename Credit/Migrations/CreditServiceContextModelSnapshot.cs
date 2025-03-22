@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace CreditService_Patterns.Migrations
+namespace Credit_Api.Migrations
 {
     [DbContext(typeof(CreditServiceContext))]
     partial class CreditServiceContextModelSnapshot : ModelSnapshot

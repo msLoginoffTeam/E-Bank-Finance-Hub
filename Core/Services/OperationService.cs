@@ -1,6 +1,6 @@
 ﻿using Core.Data.Models;
 using Core.Data;
-using Core.Services.Utils.ErrorHandling;
+using Common.ErrorHandling;
 
 namespace Core.Services
 {

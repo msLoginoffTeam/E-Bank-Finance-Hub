@@ -1,6 +1,6 @@
 {
     "ConnectionStrings": {
-        "CreditServiceContext": "Host=creditDB;Port=5432;Database=CreditDB;Username=postgres;Password=admin"
+        "CreditServiceContext": "Host=localhost;Port=5432;Database=CreditDB;Username=postgres;Password=admin"
     },
     "Logging": {
         "LogLevel": {

@@ -1,7 +1,7 @@
-﻿using Core.Data.DTOs.Responses;
+﻿using Common.ErrorHandling;
+using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
-using Core.Services.Utils.ErrorHandling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

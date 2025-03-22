@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "User Api", "User\User Api.c
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credit Api", "Credit\Credit Api.csproj", "{B98707E1-83E2-4375-9A0B-39F92343C135}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth Service", "Auth Service\Auth Service.csproj", "{4F12F71A-D2F6-4CE4-83EC-94C068A50093}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{B98707E1-83E2-4375-9A0B-39F92343C135}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B98707E1-83E2-4375-9A0B-39F92343C135}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B98707E1-83E2-4375-9A0B-39F92343C135}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F12F71A-D2F6-4CE4-83EC-94C068A50093}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F12F71A-D2F6-4CE4-83EC-94C068A50093}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F12F71A-D2F6-4CE4-83EC-94C068A50093}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F12F71A-D2F6-4CE4-83EC-94C068A50093}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
