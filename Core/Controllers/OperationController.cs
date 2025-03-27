@@ -1,8 +1,10 @@
 ﻿using Common.ErrorHandling;
+using Common.Rabbit.DTOs.Requests;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
+using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +18,12 @@ namespace Core.Controllers
     {
         private readonly AccountService _accountService;
         private readonly OperationService _operationService;
-        public OperationController(AccountService accountService, OperationService operationService)
+        private readonly CoreRabbit _rabbit;
+        public OperationController(AccountService accountService, OperationService operationService, CoreRabbit rabbit)
         {
             _accountService = accountService;
             _operationService = operationService;
+            _rabbit = rabbit;
         }
 
         /// <summary>  
@@ -57,6 +61,11 @@ namespace Core.Controllers
                             Response.Add(new CashOperationResponse(Operation as CashOperation));
                             break;
                         }
+                    case OperationCategory.Transfer:
+                        {
+                            Response.Add(new TransferOperationResponse(Operation as TransferOperation));
+                            break;
+                        }
                 }
             }
             return Ok(Response);
@@ -69,14 +78,45 @@ namespace Core.Controllers
         [HttpPost]
         [Route("{TargetAccountId}/cash")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult makeCashOperation(Guid TargetAccountId, CashOperationRequest Request)
+        public ActionResult makeCashOperation(Guid TargetAccountId, OperationRequest Request)
         {
             var ClientId = User.Claims.ToList()[0].Value;
-            Account Account = _accountService.GetAccount(TargetAccountId, new Guid(ClientId));
 
-            CashOperation CashOperation = new CashOperation(Request, Account);
+            CashOperationRequest CashOperationRequest = new CashOperationRequest()
+            {
+                AccountId = TargetAccountId,
+                ClientId = new Guid(ClientId),
+                Amount = Request.Amount,
+                OperationType = Request.OperationType.ToString()
+            };
 
-            _operationService.MakeOperation(CashOperation);
+            var ErrorResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, ErrorResponse>(CashOperationRequest);
+            if (ErrorResponse != null) { throw new ErrorException(ErrorResponse); }
+
+            return Ok();
+        }
+
+        /// <summary>  
+        /// Операции перевода
+        /// </summary>
+        [Authorize(Roles = "Client")]
+        [HttpPost]
+        [Route("{SenderAccountId}/transfer/{ReceiverAccountNumber}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult makeTransferOperation(Guid SenderAccountId, OperationRequest Request, string ReceiverAccountNumber)
+        {
+            var ClientId = User.Claims.ToList()[0].Value;
+
+            TransferOperationRequest TransferOperationRequest = new TransferOperationRequest()
+            {
+                AccountId = SenderAccountId,
+                ClientId = new Guid(ClientId),
+                Amount = Request.Amount,
+                ReceiverAccountNumber = ReceiverAccountNumber
+            };
+
+            var ErrorResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, ErrorResponse>(TransferOperationRequest);
+            if (ErrorResponse != null) { throw new ErrorException(ErrorResponse); }
 
             return Ok();
         }

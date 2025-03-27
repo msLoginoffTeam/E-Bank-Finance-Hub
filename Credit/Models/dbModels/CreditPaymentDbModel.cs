@@ -23,7 +23,7 @@ public class CreditPaymentDbModel
     public required Guid AccountId { get; set; }
 
     [Required]
-    public required float PaymentAmount { get; set; }
+    public required int PaymentAmount { get; set; }
 
     [Required]
     public required DateTime PaymentDate { get; set; }

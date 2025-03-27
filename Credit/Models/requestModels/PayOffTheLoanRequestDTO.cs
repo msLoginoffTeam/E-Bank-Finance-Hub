@@ -13,6 +13,6 @@ public class PayOffTheLoanRequestDTO
     public required Guid CreditId { get; set; }
 
     [Required(ErrorMessage = "Amount is required.")]
-    [Range(0.0, float.MaxValue, ErrorMessage = "Amount must be greater than 0.0")]
-    public required float Amount { get; set; }
+    [Range(0.0, int.MaxValue, ErrorMessage = "Amount must be greater than 0.0")]
+    public required int Amount { get; set; }
 }

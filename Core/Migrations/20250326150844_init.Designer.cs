@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Core_Api.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250322095008_init")]
+    [Migration("20250326150844_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -31,16 +31,23 @@ namespace Core_Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<float>("BalanceInRubles")
-                        .HasColumnType("real");
+                    b.Property<int>("Balance")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsClosed")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Number")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -68,8 +75,8 @@ namespace Core_Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<float>("AmountInRubles")
-                        .HasColumnType("real");
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
 
                     b.Property<int>("OperationCategory")
                         .HasColumnType("integer");
@@ -94,6 +101,19 @@ namespace Core_Api.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Core_Api.Data.Models.CurrencyCourse", b =>
+                {
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Course")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Currency");
+
+                    b.ToTable("CurrencyCourses");
+                });
+
             modelBuilder.Entity("Core.Data.Models.CashOperation", b =>
                 {
                     b.HasBaseType("Core.Data.Models.Operation");
@@ -109,6 +129,21 @@ namespace Core_Api.Migrations
                         .HasColumnType("uuid");
 
                     b.HasDiscriminator().HasValue(0);
+                });
+
+            modelBuilder.Entity("Core.Data.Models.TransferOperation", b =>
+                {
+                    b.HasBaseType("Core.Data.Models.Operation");
+
+                    b.Property<int>("ConvertedAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SenderAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("SenderAccountId");
+
+                    b.HasDiscriminator().HasValue(2);
                 });
 
             modelBuilder.Entity("Core.Data.Models.Account", b =>
@@ -131,6 +166,17 @@ namespace Core_Api.Migrations
                         .IsRequired();
 
                     b.Navigation("TargetAccount");
+                });
+
+            modelBuilder.Entity("Core.Data.Models.TransferOperation", b =>
+                {
+                    b.HasOne("Core.Data.Models.Account", "SenderAccount")
+                        .WithMany()
+                        .HasForeignKey("SenderAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SenderAccount");
                 });
 #pragma warning restore 612, 618
         }

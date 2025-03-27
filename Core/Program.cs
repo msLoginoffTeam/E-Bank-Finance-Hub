@@ -3,6 +3,7 @@ using Common.ErrorHandling;
 using Core.Data;
 using Core.Services;
 using Core.Services.Utils;
+using Core_Api.Services.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -57,7 +58,8 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<OperationService>();
-builder.Services.AddSingleton<Core.Services.Utils.CoreRabbit>();
+builder.Services.AddSingleton<CoreRabbit>();
+builder.Services.AddHostedService<CurrencyCoursesGetter>();
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>

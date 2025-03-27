@@ -6,6 +6,8 @@
 
         public string message { get; set; }
 
+        public ErrorResponse() {}
+
         public ErrorResponse(int status, string message)
         {
             this.status = status;

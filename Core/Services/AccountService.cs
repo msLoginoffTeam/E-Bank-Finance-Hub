@@ -57,6 +57,18 @@ namespace Core.Services
             return Account;
         }
 
+        public Account GetAccount(string Number)
+        {
+            Account? Account = _context.Accounts.Include(Account => Account.Client).FirstOrDefault(Account => Account.Number == Number);
+
+            if (Account == null)
+            {
+                throw new ErrorException(404, "Счета с таким номером нет.");
+            }
+
+            return Account;
+        }
+
         public List<Account> GetAccounts(Guid ClientId)
         {
             return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();

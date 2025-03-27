@@ -1,4 +1,5 @@
 ﻿using Common.ErrorHandling;
+using Common.Rabbit.DTOs.Requests;
 using Core.Data.DTOs.Requests;
 using Core.Data.Models;
 using EasyNetQ;
@@ -22,23 +23,8 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
-            _bus.PubSub.Subscribe<((Guid AccountId, Guid ClientId), CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
+            _bus.Rpc.Respond<RabbitOperationRequest, ErrorResponse>(Request =>
             {
-                var (Account, Request) = tuple;
-
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var OperationService = scope.ServiceProvider.GetRequiredService<OperationService>();
-                    var AccountService = scope.ServiceProvider.GetRequiredService<AccountService>();
-
-                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(Account.AccountId, Account.ClientId)));
-                }
-            });
-
-            _bus.Rpc.Respond<((Guid AccountId, Guid ClientId), CreditOperationRequest Request), ErrorResponse?>(tuple =>
-            {
-                var (Account, Request) = tuple;
-
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var operationService = scope.ServiceProvider.GetRequiredService<OperationService>();
@@ -46,13 +32,29 @@ namespace Core.Services.Utils
 
                     try
                     {
-                        var account = accountService.GetAccount(Account.AccountId, Account.ClientId);
-                        var operation = new CreditOperation(Request, account);
-                        operationService.MakeOperation(operation);
+                        Operation Operation;
+                        Account Account = accountService.GetAccount(Request.AccountId, Request.ClientId);
+
+                        if (Request is CreditOperationRequest CreditRequest)
+                        {
+                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId);
+                        }
+                        else if (Request is TransferOperationRequest TransferOperationRequest)
+                        {
+                            Account ReceiverAccount = accountService.GetAccount(TransferOperationRequest.ReceiverAccountNumber);
+                            if (ReceiverAccount == Account) return new ErrorResponse(400, "Счета получателя и отправителя совпадают");
+
+                            Operation = new TransferOperation(Account, new OperationRequest(Request), ReceiverAccount);
+                        }
+                        else
+                        {
+                            Operation = new CashOperation(new OperationRequest(Request), Account);
+                        }
+                        operationService.MakeOperation(Operation);
                     }
                     catch (ErrorException ex)
                     {
-                        return new ErrorResponse(ex.status, ex.message);
+                        return new ErrorResponse(ex);
                     }
                     return null;
                 }
