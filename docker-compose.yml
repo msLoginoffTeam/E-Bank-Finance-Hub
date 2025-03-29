@@ -22,6 +22,7 @@ services:
       dockerfile: CoreDockerfile
     ports:  
       - "8080:8080"
+      - "5009:5009"
     environment:
       CORE_DATABASE_CONNECTION: ${CORE_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}

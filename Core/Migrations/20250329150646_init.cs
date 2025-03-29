@@ -65,7 +65,7 @@ namespace Core_Api.Migrations
                     Amount = table.Column<int>(type: "integer", nullable: false),
                     Time = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     OperationCategory = table.Column<int>(type: "integer", nullable: false),
-                    OperationType = table.Column<int>(type: "integer", nullable: false),
+                    OperationType = table.Column<int>(type: "integer", nullable: true),
                     TargetAccountId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreditId = table.Column<Guid>(type: "uuid", nullable: true),
                     ConvertedAmount = table.Column<int>(type: "integer", nullable: true),
@@ -87,6 +87,11 @@ namespace Core_Api.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "Clients",
+                column: "Id",
+                value: new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"));
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_ClientId",

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace User_Api.Migrations
 {
     /// <inheritdoc />
@@ -46,12 +48,20 @@ namespace User_Api.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "Email", "FullName", "IsBlocked" },
-                values: new object[] { new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"), "manager@example.com", "Менеджер А", false });
+                values: new object[,]
+                {
+                    { new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"), "manager@example.com", "Менеджер А", false },
+                    { new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"), "user@example.com", "Клиент Б", false }
+                });
 
             migrationBuilder.InsertData(
                 table: "UserRoles",
                 columns: new[] { "Role", "UserId" },
-                values: new object[] { 2, new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db") });
+                values: new object[,]
+                {
+                    { 0, new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db") },
+                    { 2, new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db") }
+                });
         }
 
         /// <inheritdoc />

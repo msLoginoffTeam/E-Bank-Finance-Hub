@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Core_Api.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20250326150844_init")]
+    [Migration("20250329150646_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -67,6 +67,12 @@ namespace Core_Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clients");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")
+                        });
                 });
 
             modelBuilder.Entity("Core.Data.Models.Operation", b =>
@@ -81,7 +87,7 @@ namespace Core_Api.Migrations
                     b.Property<int>("OperationCategory")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OperationType")
+                    b.Property<int?>("OperationType")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TargetAccountId")

@@ -8,6 +8,7 @@ using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.WebSockets;
 using UserApi.Data.Models;
 
 namespace Core.Controllers
@@ -19,6 +20,7 @@ namespace Core.Controllers
         private readonly AccountService _accountService;
         private readonly OperationService _operationService;
         private readonly CoreRabbit _rabbit;
+
         public OperationController(AccountService accountService, OperationService operationService, CoreRabbit rabbit)
         {
             _accountService = accountService;
@@ -33,7 +35,7 @@ namespace Core.Controllers
         [HttpGet]
         [Route("{TargetAccountId}/operations")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult getOperations(Guid TargetAccountId)
+        public async Task<ActionResult> getOperations(Guid TargetAccountId)
         {
             var UserId = User.Claims.ToList()[0].Value;
             var Role = User.Claims.ToList()[2].Value;
@@ -44,7 +46,7 @@ namespace Core.Controllers
                 throw new ErrorException(403, "Счет не принадлежит клиенту.");
             }
 
-            List<Operation> Operations = _operationService.GetOperations(Account);
+            List<Operation> Operations = _operationService.GetOperationsByAccountId(Account.Id);
 
             List<object> Response = new List<object>();
             foreach (var Operation in Operations)
@@ -68,6 +70,7 @@ namespace Core.Controllers
                         }
                 }
             }
+
             return Ok(Response);
         }
 

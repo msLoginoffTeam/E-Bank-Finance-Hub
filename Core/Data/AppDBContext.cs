@@ -1,6 +1,8 @@
 ﻿using Core.Data.Models;
 using Core_Api.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using User_Api.Data.Models;
+using UserApi.Data.Models;
 
 namespace Core.Data
 {
@@ -33,6 +35,12 @@ namespace Core.Data
             modelBuilder.Entity<TransferOperation>().HasOne(TransferOperation => TransferOperation.SenderAccount).WithMany().HasForeignKey("SenderAccountId");
 
             modelBuilder.Entity<CurrencyCourse>().HasKey(CurrencyCourse => CurrencyCourse.Currency);
+
+            Client User = new Client()
+            {
+                Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")
+            };
+            modelBuilder.Entity<Client>().HasData(User);
         }
     }
 }

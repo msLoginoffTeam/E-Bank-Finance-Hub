@@ -68,7 +68,7 @@ namespace Core.Data.Models
         public TransferOperation(Account SenderAccount, OperationRequest Request, Account TargetAccount) : base(Request, TargetAccount)
         {
             this.SenderAccount = SenderAccount;
-            OperationCategory = OperationCategory.Credit;
+            OperationCategory = OperationCategory.Transfer;
         }
     }
 }

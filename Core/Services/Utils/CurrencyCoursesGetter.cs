@@ -1,6 +1,7 @@
 ﻿using Core.Data;
 using Core.Data.Models;
 using Core_Api.Data.Models;
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 
@@ -71,7 +72,7 @@ namespace Core_Api.Services.Utils
                                                      .Select(valute => (string)valute.Element("Value"))
                                                      .FirstOrDefault();
 
-                            CurrencyCourses.Add(new CurrencyCourse(CurrenciesToFindDict[CurrencyName], (int)float.Parse(CurrencyValue) * 100));
+                            CurrencyCourses.Add(new CurrencyCourse(CurrenciesToFindDict[CurrencyName], ((int)float.Parse(CurrencyValue, new CultureInfo("ru-RU"))) * 100));
                         }
                     }
                     _context.CurrencyCourses.RemoveRange(_context.CurrencyCourses.ToList());

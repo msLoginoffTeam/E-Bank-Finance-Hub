@@ -64,6 +64,12 @@ namespace Core_Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clients");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")
+                        });
                 });
 
             modelBuilder.Entity("Core.Data.Models.Operation", b =>

@@ -47,6 +47,13 @@ namespace Auth_Service.Migrations
                         .HasColumnType("text");
 
                     b.ToTable("ClientAuths");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                            Password = "0362795B2EE7235B3B4D28F0698A85366703EACF0BA4085796FFD980D7653337"
+                        });
                 });
 
             modelBuilder.Entity("Auth_Service.Data.Models.EmployeeAuth", b =>

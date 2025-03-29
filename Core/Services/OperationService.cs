@@ -2,6 +2,7 @@
 using Core.Data;
 using Common.ErrorHandling;
 using System.Xml.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Core.Services
 {
@@ -29,6 +30,7 @@ namespace Core.Services
                     Operation.TargetAccount.Balance -= Operation.Amount;
                     if (Operation.TargetAccount.Balance < 0) throw new ErrorException(403, "На счете не хватает денег для операции.");
                 }
+                _context.Operations.Add(Operation);
             }
             else if (Operation is CreditOperation)
             {
@@ -45,21 +47,19 @@ namespace Core.Services
                     if (Operation.TargetAccount.Balance < 0) throw new ErrorException(403, "На счете не хватает денег для операции.");
                     BankAccount.Balance += Operation.Amount;
                 }
+                _context.Operations.Add(Operation);
             }
             else
             {
                 TransferOperation TransferOperation = (TransferOperation)Operation;
-
-                TransferOperation.ConvertedAmount = CountConvertedAmount(TransferOperation.SenderAccount, TransferOperation.TargetAccount, Operation.Amount);
-
                 TransferOperation.SenderAccount.Balance -= Operation.Amount;
                 if (TransferOperation.SenderAccount.Balance < 0) throw new ErrorException(403, "На счете отправителя не хватает денег для операции.");
                 Operation.TargetAccount.Balance += TransferOperation.ConvertedAmount;
                 _context.Accounts.Update(TransferOperation.SenderAccount);
+                _context.Operations.Add(TransferOperation);
             }
 
             _context.Accounts.Update(Operation.TargetAccount);
-            _context.Operations.Add(Operation);
             _context.SaveChanges();
         }
 
@@ -67,12 +67,23 @@ namespace Core.Services
         {
             int SenderCurrencyValue = _context.CurrencyCourses.First(CurrencyCourse => CurrencyCourse.Currency == Sender.Currency).Course;
             int TargetCurrencyValue = _context.CurrencyCourses.First(CurrencyCourse => CurrencyCourse.Currency == Target.Currency).Course;
+            Console.WriteLine(SenderCurrencyValue);
+            Console.WriteLine(TargetCurrencyValue);
             return SenderAmount * SenderCurrencyValue / TargetCurrencyValue;
         }
 
-        public List<Operation> GetOperations(Account Account)
+        public List<Operation> GetOperationsByAccountId(Guid AccountId)
         {
-            return _context.Operations.Where(Operation => Operation.TargetAccount == Account).OrderByDescending(Operation => Operation.Time).ToList();
+            var Operations = _context.Operations
+                .Where(Operation => Operation.TargetAccount.Id == AccountId);
+
+            var TransferOperations = _context.Operations
+                .Where(Operation => (Operation as TransferOperation).SenderAccount.Id == AccountId);
+
+
+            return Operations.Concat(TransferOperations).Include(Operation => Operation.TargetAccount)
+                .OrderByDescending(Operation => Operation.Time)  
+                .ToList();
         }
     }
 }
