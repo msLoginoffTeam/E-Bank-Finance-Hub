@@ -1,8 +1,6 @@
 ﻿using Core.Data.Models;
 using Core_Api.Data.Models;
 using Microsoft.EntityFrameworkCore;
-using User_Api.Data.Models;
-using UserApi.Data.Models;
 
 namespace Core.Data
 {
@@ -40,6 +38,13 @@ namespace Core.Data
             {
                 Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")
             };
+
+            modelBuilder.Entity<Client>().HasData(new Client() { Id = Guid.Empty });
+
+            modelBuilder.Entity<Account>().HasData(new { Id = Guid.NewGuid(), Name = "Банковский Рублевый", Currency = Currency.Ruble, Balance = 1000000000, ClientId = Guid.Empty, IsClosed = false });
+            modelBuilder.Entity<Account>().HasData(new { Id = Guid.NewGuid(), Name = "Банковский Долларовый", Currency = Currency.Dollar, Balance = 10000000, ClientId = Guid.Empty, IsClosed = false });
+            modelBuilder.Entity<Account>().HasData(new { Id = Guid.NewGuid(), Name = "Банковский Евровый", Currency = Currency.Euro, Balance = 10000000, ClientId = Guid.Empty, IsClosed = false });
+
             modelBuilder.Entity<Client>().HasData(User);
         }
     }

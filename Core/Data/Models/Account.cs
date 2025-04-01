@@ -8,7 +8,7 @@ namespace Core.Data.Models
         public Guid Id { get; set; }
 
         public string Name { get; set; }
-        public string Number { get; set; }
+        public string? Number { get; set; }
         public Currency Currency { get; set; }
         public int Balance { get; set; }
 
@@ -40,31 +40,4 @@ namespace Core.Data.Models
         Dollar,
         Euro
     }
-
-    //public class RubleAccount : Account
-    //{
-    //    public RubleAccount() {}
-    //    public RubleAccount(CreateAccountRequest CreateRequest, Client User) : base(CreateRequest, User)
-    //    {
-    //        Currency = Currency.Ruble;
-    //    }
-    //}
-
-    //public class DollarAccount : Account
-    //{
-    //    public DollarAccount() { }
-    //    public DollarAccount(CreateAccountRequest CreateRequest, Client User) : base(CreateRequest, User)
-    //    {
-    //        Currency = Currency.Dollar;
-    //    }
-    //}
-
-    //public class EuroAccount : Account
-    //{
-    //    public EuroAccount() { }
-    //    public EuroAccount(CreateAccountRequest CreateRequest, Client User) : base(CreateRequest, User)
-    //    {
-    //        Currency = Currency.Euro;
-    //    }
-    //}
 }

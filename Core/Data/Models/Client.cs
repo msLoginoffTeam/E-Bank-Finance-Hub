@@ -2,7 +2,7 @@
 {
     public class Client
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
         public Client(){}
         public Client(Guid UserId)

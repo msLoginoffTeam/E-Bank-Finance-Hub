@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace Core_Api.Migrations
 {
     /// <inheritdoc />
@@ -40,7 +42,7 @@ namespace Core_Api.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Number = table.Column<string>(type: "text", nullable: false),
+                    Number = table.Column<string>(type: "text", nullable: true),
                     Currency = table.Column<int>(type: "integer", nullable: false),
                     Balance = table.Column<int>(type: "integer", nullable: false),
                     ClientId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -91,7 +93,21 @@ namespace Core_Api.Migrations
             migrationBuilder.InsertData(
                 table: "Clients",
                 column: "Id",
-                value: new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"));
+                values: new object[]
+                {
+                    new Guid("00000000-0000-0000-0000-000000000000"),
+                    new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")
+                });
+
+            migrationBuilder.InsertData(
+                table: "Accounts",
+                columns: new[] { "Id", "Balance", "ClientId", "Currency", "IsClosed", "Name", "Number" },
+                values: new object[,]
+                {
+                    { new Guid("6b1f2247-f43d-44d7-be26-4c458055b7cd"), 10000000, new Guid("00000000-0000-0000-0000-000000000000"), 2, false, "Банковский Евровый", null },
+                    { new Guid("cedf298f-65cd-496e-a1ef-75de39dc0891"), 10000000, new Guid("00000000-0000-0000-0000-000000000000"), 1, false, "Банковский Долларовый", null },
+                    { new Guid("ffa09d4d-ba75-4382-84fd-453cdf7323ce"), 1000000000, new Guid("00000000-0000-0000-0000-000000000000"), 0, false, "Банковский Рублевый", null }
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_ClientId",
