@@ -378,7 +378,7 @@ public class CreditService : ICreditService
             }
 
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            using (var bus = RabbitHutch.CreateBus("host=localhost"))
             {
                 var AccountExists = await bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
                 if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
@@ -398,7 +398,7 @@ public class CreditService : ICreditService
             await _creditContext.Credit.AddAsync(newCredit);
             await _creditContext.SaveChangesAsync();
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            using (var bus = RabbitHutch.CreateBus("host=localhost"))
             {
                 var request = new CreditOperationRequest
                 {
@@ -441,13 +441,14 @@ public class CreditService : ICreditService
                 AccountId = paymentData.AccountId
             };
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            using (var bus = RabbitHutch.CreateBus("host=localhost"))
             {
                 var request = new CreditOperationRequest
                 {
                     CreditId = credit.Id,
                     Amount = newPayment.PaymentAmount,
-                    OperationType = OperationType.Outcome.ToString()
+                    OperationType = OperationType.Outcome.ToString(),
+                    Type = Common.Models.CreditOperationType.ByUser
                 };
 
                 var response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((paymentData.AccountId, ClientId), request));
@@ -519,10 +520,11 @@ public class CreditService : ICreditService
                 {
                     CreditId = credit.Id,
                     Amount = PaymentAmount,
-                    OperationType = OperationType.Outcome.ToString()
+                    OperationType = OperationType.Outcome.ToString(),
+                    Type = Common.Models.CreditOperationType.Automatic
                 };
 
-                using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+                using (var bus = RabbitHutch.CreateBus("host=localhost"))
                 {
                     response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((credit.AccountId, credit.ClientId), request));
                 }

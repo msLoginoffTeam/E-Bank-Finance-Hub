@@ -1,4 +1,6 @@
-﻿namespace Common.Rabbit.DTOs.Requests
+﻿using Common.Models;
+
+namespace Common.Rabbit.DTOs.Requests
 {
     public class RabbitOperationRequest
     {
@@ -10,6 +12,7 @@
     public class CreditOperationRequest : RabbitOperationRequest
     {
         public Guid CreditId { get; set; }
+        public CreditOperationType? Type { get; set; }
     }
 
     public class CashOperationRequest : RabbitOperationRequest

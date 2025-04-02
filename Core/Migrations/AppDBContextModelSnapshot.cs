@@ -45,7 +45,6 @@ namespace Core_Api.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Number")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -53,11 +52,40 @@ namespace Core_Api.Migrations
                     b.HasIndex("ClientId");
 
                     b.ToTable("Accounts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("ffa09d4d-ba75-4382-84fd-453cdf7323ce"),
+                            Balance = 1000000000,
+                            ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Currency = 0,
+                            IsClosed = false,
+                            Name = "Банковский Рублевый"
+                        },
+                        new
+                        {
+                            Id = new Guid("cedf298f-65cd-496e-a1ef-75de39dc0891"),
+                            Balance = 10000000,
+                            ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Currency = 1,
+                            IsClosed = false,
+                            Name = "Банковский Долларовый"
+                        },
+                        new
+                        {
+                            Id = new Guid("6b1f2247-f43d-44d7-be26-4c458055b7cd"),
+                            Balance = 10000000,
+                            ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Currency = 2,
+                            IsClosed = false,
+                            Name = "Банковский Евровый"
+                        });
                 });
 
             modelBuilder.Entity("Core.Data.Models.Client", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
@@ -66,6 +94,10 @@ namespace Core_Api.Migrations
                     b.ToTable("Clients");
 
                     b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000000")
+                        },
                         new
                         {
                             Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db")

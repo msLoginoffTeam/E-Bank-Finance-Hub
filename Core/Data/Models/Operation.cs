@@ -1,4 +1,5 @@
-﻿using Core.Data.DTOs.Requests;
+﻿using Common.Models;
+using Core.Data.DTOs.Requests;
 
 namespace Core.Data.Models
 {
@@ -50,12 +51,15 @@ namespace Core.Data.Models
     public class CreditOperation : Operation
     {
         public Guid CreditId { get; set; }
+        public CreditOperationType? Type { get; set; }
 
         public CreditOperation() {}
-        public CreditOperation(OperationRequest Request, Account TargetAccount, Guid CreditId) : base(Request, TargetAccount)
+        public CreditOperation(OperationRequest Request, Account TargetAccount, Guid CreditId, CreditOperationType? type) : base(Request, TargetAccount)
         {
             this.CreditId = CreditId;
             OperationCategory = OperationCategory.Credit;
+            Type = type;
+
         }
     }
 

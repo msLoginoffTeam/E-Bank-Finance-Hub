@@ -35,6 +35,7 @@ namespace Core.Services
             else if (Operation is CreditOperation)
             {
                 Account BankAccount = _context.Accounts.Where(Account => Account.Client.Id == Guid.Empty && Account.Currency == Operation.TargetAccount.Currency).First();
+                Client UserCli = _context.Clients.Where(c => c.Id == Operation.TargetAccount.Client.Id).First();
                 if (Operation.OperationType == OperationType.Income)
                 {
                     BankAccount.Balance -= Operation.Amount;
@@ -44,10 +45,16 @@ namespace Core.Services
                 else
                 {
                     Operation.TargetAccount.Balance -= Operation.Amount;
-                    if (Operation.TargetAccount.Balance < 0) throw new ErrorException(403, "На счете не хватает денег для операции.");
+                    if (Operation.TargetAccount.Balance < 0)
+                    {
+                        UserCli.Rating = UserCli.Rating > 0 ? --UserCli.Rating : UserCli.Rating;
+                        throw new ErrorException(403, "На счете не хватает денег для операции.");
+                    }
+                    UserCli.Rating = UserCli.Rating < 1000 ? ++UserCli.Rating : UserCli.Rating;
                     BankAccount.Balance += Operation.Amount;
                 }
                 _context.Operations.Add(Operation);
+                _context.Clients.Update(UserCli);
             }
             else
             {

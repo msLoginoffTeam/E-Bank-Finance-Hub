@@ -9,8 +9,8 @@ namespace Auth_Service.Services.Utils
 {
     public class TokenGenerator
     {
-        private readonly AuthenticationConfiguration _configuration;
-        public TokenGenerator(AuthenticationConfiguration configuration)
+        private readonly CreditOperationType _configuration;
+        public TokenGenerator(CreditOperationType configuration)
         {
             _configuration = configuration;
         }

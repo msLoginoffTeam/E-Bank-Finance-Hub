@@ -14,7 +14,7 @@ namespace Core.Services
         public AccountService(AppDBContext context)
         {
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=rabbitmq");
+            _bus = RabbitHutch.CreateBus("host=localhost");
         }
 
         public Client GetClient(Guid ClientId)
@@ -71,7 +71,7 @@ namespace Core.Services
 
         public List<Account> GetAccounts(Guid ClientId)
         {
-            return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
+            return _context.Accounts.Include(a => a.Client).Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
         }
 
         public void CreateClient(Guid ClientId)
