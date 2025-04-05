@@ -1,27 +1,28 @@
-﻿using EasyNetQ;
-using Newtonsoft.Json.Linq;
+﻿
+using Common.ErrorHandling;
+using Common.Rabbit.DTOs;
+using EasyNetQ;
+using Microsoft.EntityFrameworkCore;
+using User_Api.Data.Models;
 using UserApi.Data;
 using UserApi.Data.Models;
-using UserApi.Services.Utils.ErrorHandling;
-using UserApi.Services.Utils.TokenGenerator;
+using UserApi.Services.Utils;
 
 namespace UserApi.Services
 {
     public class UserService
     {
-        private readonly TokenGenerator _tokenGenerator;
         private readonly AppDBContext _context;
-        private readonly IBus _bus;
-        public UserService(TokenGenerator tokenGenerator, AppDBContext context)
+        private readonly UserRabbit _rabbit;
+        public UserService(AppDBContext context, UserRabbit rabbit)
         {
-            _tokenGenerator = tokenGenerator;
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=rabbitmq");
+            _rabbit = rabbit;
         }
 
         public User GetUserById(Guid UserId)
         {
-            User? User = _context.Users.FirstOrDefault(User => User.Id == UserId);
+            User? User = _context.Users.Include(User => User.Roles).FirstOrDefault(User => User.Id == UserId);
             if (User == null)
             {
                 throw new ErrorException(404, "Пользователь с таким Id не найден");
@@ -29,9 +30,15 @@ namespace UserApi.Services
             return User;
         }
 
+        public User? GetUserByLoginUnsafe(string Email)
+        {
+            User? User = _context.Users.Include(User => User.Roles).FirstOrDefault(User => User.Email == Email);
+            return User;
+        }
+
         public User GetUserByLogin(string Email)
         {
-            User? User = _context.Users.FirstOrDefault(User => User.Email == Email);
+            User? User = _context.Users.Include(User => User.Roles).FirstOrDefault(User => User.Email == Email);
             if (User == null)
             {
                 throw new ErrorException(400, "Пользователь с такой почтой не найден.");
@@ -39,14 +46,14 @@ namespace UserApi.Services
             return User;
         }
 
-        public List<Client> GetClients()
+        public List<User> GetClients()
         {
-            return _context.Users.OfType<Client>().ToList();
+            return _context.Users.Where(User => User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Client)).ToList();
         }
 
-        public List<Employee> GetEmployees()
+        public List<User> GetEmployees()
         {
-            return _context.Users.OfType<Employee>().ToList();
+            return _context.Users.Where(User => User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Employee)).ToList();
         }
 
         public void EditUser(User User)
@@ -55,42 +62,50 @@ namespace UserApi.Services
             _context.SaveChanges();
         }
 
-        public void RegisterUser(User User)
+        public void SetRole(User User, Role Role)
         {
-            if (User.Role == Role.Client)
+            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager) && Role == Role.Employee) throw new ErrorException(403, "Пользователь не может быть одновременно менеджером и работником");
+            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role)) throw new ErrorException(403, "У пользователя уже есть такая роль");
+
+            User.Roles.Add(new UserRole(User, Role));
+
+            if (Role == Role.Client)
             {
-                _bus.PubSub.Publish(User.Id, "CreatedClientId");
+                _rabbit._bus.PubSub.Publish(User.Id, "CreatedClientId");
+                _rabbit._bus.PubSub.Publish(new UserRoleAuthDTO()
+                {
+                    Id = User.Id,
+                    Role = Role.Client.ToString()
+                });
             }
-
-            _context.Users.Add(User);
-            _context.SaveChanges();
-        }
-
-        public (string AccessToken, string RefreshToken) LoginUser(User User)
-        {
-            var token = (AccessToken: _tokenGenerator.GenerateAccessToken(User.Id, User.Role), RefreshToken: _tokenGenerator.GenerateRefreshToken(User.Id));
-
-            User.RefreshToken = token.RefreshToken;
+            else
+            {
+                _rabbit._bus.PubSub.Publish(new UserRoleAuthDTO()
+                {
+                    Id = User.Id,
+                    Role = Role.Employee.ToString()
+                });
+            }
 
             _context.Users.Update(User);
             _context.SaveChanges();
-
-            return token;
         }
 
-        public (string AccessToken, string RefreshToken) Refresh(User User, string LastRefreshToken)
+        public void RegisterUser(User User, Role Role, string Password)
         {
-            if (User.RefreshToken != LastRefreshToken) throw new ErrorException(401, "Токен просрочен");
+            if (Role == Role.Client)
+            {
+                _rabbit._bus.PubSub.Publish(User.Id, "CreatedClientId");
+            }
+            _rabbit._bus.PubSub.Publish(new UserAuthDTO()
+            {
+                Id = User.Id,
+                Password = Password,
+                Role = Role.ToString()
+            });
 
-            var RefreshToken = _tokenGenerator.GenerateRefreshToken(User.Id);
-            var AccessToken = _tokenGenerator.GenerateAccessToken(User.Id, User.Role);
-
-            User.RefreshToken = RefreshToken;
-
-            _context.Update(User);
+            _context.Users.Add(User);
             _context.SaveChanges();
-
-            return (AccessToken, RefreshToken);
         }
 
         public void BlockUser(User User)

@@ -7,7 +7,6 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <UserSecretsId>34305e71-4a0e-4359-b837-4c50d508bbc2</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +20,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Core\Core Api.csproj" />
   </ItemGroup>
 

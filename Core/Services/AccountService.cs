@@ -1,6 +1,6 @@
-﻿using Core.Data;
+﻿using Common.ErrorHandling;
+using Core.Data;
 using Core.Data.Models;
-using Core.Services.Utils.ErrorHandling;
 using Core_Api.Data.DTOs.Requests;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +52,18 @@ namespace Core.Services
             if (Account == null)
             {
                 throw new ErrorException(404, "Счета с таким Id нет.");
+            }
+
+            return Account;
+        }
+
+        public Account GetAccount(string Number)
+        {
+            Account? Account = _context.Accounts.Include(Account => Account.Client).FirstOrDefault(Account => Account.Number == Number);
+
+            if (Account == null)
+            {
+                throw new ErrorException(404, "Счета с таким номером нет.");
             }
 
             return Account;

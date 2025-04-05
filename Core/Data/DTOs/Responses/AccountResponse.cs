@@ -6,9 +6,11 @@ namespace Core.Data.DTOs.Responses
     {
         public Guid Id { get; set; }
 
-        public string Name { get; set; }
 
-        public float BalanceInRubles { get; set; }
+        public string Name { get; set; }
+        public string Number { get; set; }
+        public float Balance { get; set; }
+        public Currency Currency { get; set; }
 
         public bool IsClosed { get; set; }
 
@@ -16,7 +18,9 @@ namespace Core.Data.DTOs.Responses
         {
             Id = Account.Id;
             Name = Account.Name;
-            BalanceInRubles = Account.BalanceInRubles;
+            Number = Account.Number;
+            Currency = Account.Currency;
+            Balance = Account.Balance;
             IsClosed = Account.IsClosed;
         }
     }

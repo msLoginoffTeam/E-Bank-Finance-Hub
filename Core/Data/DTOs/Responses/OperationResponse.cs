@@ -5,19 +5,19 @@ namespace Core.Data.DTOs.Responses
 {
     public abstract class OperationResponse
     {
-        public float AmountInRubles { get; set; }
+        public int Amount { get; set; }
 
         public DateTime Time { get; set; }
 
-        public OperationType OperationType { get; set; }
+        public OperationType? OperationType { get; set; }
 
         public OperationCategory OperationCategory { get; set; }
 
         public OperationResponse(Operation Operation)
         {
-            AmountInRubles = Operation.AmountInRubles;
+            Amount = Operation.Amount;
             Time = Operation.Time;
-            OperationType = Operation.OperationType;
+            OperationType = Operation.OperationType != null ? Operation.OperationType : null;
             OperationCategory = Operation.OperationCategory;
         }
     }
@@ -33,6 +33,20 @@ namespace Core.Data.DTOs.Responses
         public CreditOperationResponse(CreditOperation CreditOperation) : base(CreditOperation)
         {
             CreditId = CreditOperation.CreditId;
+        }
+    }
+
+    public class TransferOperationResponse : OperationResponse
+    {
+        public int ConvertedAmount { get; set; }
+        public string TargetAccountNumber { get; set; }
+        public Currency TargetAccountCurrency { get; set; }
+
+        public TransferOperationResponse(TransferOperation TransferOperation) : base(TransferOperation)
+        {
+            ConvertedAmount = TransferOperation.ConvertedAmount;
+            TargetAccountNumber = TransferOperation.TargetAccount.Number;
+            TargetAccountCurrency = TransferOperation.TargetAccount.Currency;
         }
     }
 }

@@ -1,31 +1,36 @@
 version: '3.8'  
 
-services:  
-  core:    
+services:
+  auth:
     build:  
       context: . 
-      dockerfile: CoreDockerfile
+      dockerfile: AuthDockerfile
     ports:  
       - "8083:8080"
+    environment:
+      AUTH_DATABASE_CONNECTION: ${AUTH_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
     networks:  
       - network
     depends_on:  
-      - coreDB
+      - db
       - rabbitmq 
 
-  coreDB:  
-    image: postgres:latest
-    container_name: coreDB
+  core:
+    build:
+      context: .
+      dockerfile: CoreDockerfile
     ports:  
-      - "5432:5432" 
-    environment:  
-      POSTGRES_DB: CoreDB 
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin    
-    volumes:  
-      - coreData:/var/lib/postgresql/data
+      - "8080:8080"
+      - "5009:5009"
+    environment:
+      CORE_DATABASE_CONNECTION: ${CORE_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
     networks:  
       - network
+    depends_on:
+      - db
+      - rabbitmq
 
   credit:    
     build:  
@@ -33,25 +38,14 @@ services:
       dockerfile: CreditDockerfile
     ports:  
       - "8081:8080"
-    networks:  
+    environment:
+      CREDIT_DATABASE_CONNECTION: ${CREDIT_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+    networks:
       - network
     depends_on:  
-      - creditDB
+      - db
       - rabbitmq 
-
-  creditDB:  
-    image: postgres:latest
-    container_name: creditDB
-    ports:  
-      - "5433:5432" 
-    environment:  
-      POSTGRES_DB: CreditDB 
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin    
-    volumes:  
-      - creditData:/var/lib/postgresql/data
-    networks:  
-      - network
 
   user:    
     build:  
@@ -59,23 +53,26 @@ services:
       dockerfile: UserDockerfile
     ports:  
       - "8082:8080"
-    networks:  
+    environment:
+      USER_DATABASE_CONNECTION: ${USER_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+    networks:
       - network
     depends_on:  
-      - userDB
+      - db
       - rabbitmq 
 
-  userDB:  
+  db:
     image: postgres:latest
-    container_name: userDB
+    container_name: db
     ports:  
-      - "5434:5432" 
+      - "5432:5432"
     environment:  
-      POSTGRES_DB: UsersDB 
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin    
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:  
-      - userData:/var/lib/postgresql/data
+      - dbData:/var/lib/postgresql/data
     networks:  
       - network
 
@@ -93,6 +90,4 @@ networks:
     driver: bridge
 
 volumes:  
-  coreData:
-  creditData:
-  userData:
+  dbData:

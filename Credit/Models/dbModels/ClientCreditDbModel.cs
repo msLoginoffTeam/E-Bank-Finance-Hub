@@ -27,13 +27,13 @@ public class ClientCreditDbModel
     public required Guid AccountId { get; set; }
 
     [Required]
-    public required float Amount { get; set; }
+    public required int Amount { get; set; }
 
     [Required]
     public required DateTime ClosingDate { get; set; }
 
     [Required]
-    public required float RemainingAmount { get; set; }
+    public required int RemainingAmount { get; set; }
 
     [Required]
     public required ClientCreditStatusEnum Status { get; set; }
