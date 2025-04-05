@@ -1,7 +1,6 @@
 import { Table } from '@mantine/core';
 
 export const CreditHistoryList = (credit: any) => {
-    console.log(credit)
     return (
         <Table>
             <thead>

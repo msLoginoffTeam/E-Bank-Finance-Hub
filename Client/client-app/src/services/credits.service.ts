@@ -15,12 +15,10 @@ export const CreditAPI = {
 
     async getCreditPlans() {
         const response = await axiosInstance.get(`${CREDITS_API}/Credit/GetCreditPlans?ElementsNumber=30&PageNumber=1`);
-        console.log(response.data.planList)
         return response.data.planList;
     },
 
     async createCredit(data: { accountId: string; creditPlanId: string; amount: number; closingDate: string }) {
-        console.log(data);
         const response = await axiosInstance.post(`${CREDITS_API}/Credit/GetCredit`, data);
         return response.data;
     },

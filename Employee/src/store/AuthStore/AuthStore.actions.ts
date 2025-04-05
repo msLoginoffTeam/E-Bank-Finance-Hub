@@ -24,7 +24,6 @@ export const loginEmployee = createAsyncThunk<
   try {
     return await AuthAPI.login(id);
   } catch (e) {
-    console.log(e);
 
     if (e instanceof AxiosError) {
       return rejectWithValue(e.response?.data?.message);
@@ -42,7 +41,6 @@ export const createUser = createAsyncThunk<
   try {
     await AuthAPI.register(data);
   } catch (e) {
-    console.log(e);
 
     if (e instanceof AxiosError) {
       return rejectWithValue(

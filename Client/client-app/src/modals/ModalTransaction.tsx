@@ -30,7 +30,6 @@ export const ModalTransaction = ({ opened, onClose, account, transactionType }: 
             await mutation.mutateAsync(value);
             onClose();
         } catch (err: any) {
-            console.log(err)
             setError(err.response.data.message);
         }
     };

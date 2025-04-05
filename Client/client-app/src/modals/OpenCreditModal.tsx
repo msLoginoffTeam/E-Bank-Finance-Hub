@@ -11,7 +11,6 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
     const { data: plans } = useCreditPlansQuery();
     const { data: accounts } = useAccountsQuery();
     const { mutate: openCredit, isPending } = useCreateCreditMutation();
-    console.log(plans)
 
     const [planId, setPlanId] = useState<string | null>(null);
     const [accountId, setAccountId] = useState<string | null>(null);
@@ -29,7 +28,6 @@ export const OpenCreditModal = ({ onClose }: OpenCreditModalProps) => {
         }, {
             onSuccess: onClose
         });
-        console.log(planId, accountId, amount, closingDate.toISOString());
     };
 
     return (

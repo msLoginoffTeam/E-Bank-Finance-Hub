@@ -9,12 +9,14 @@ import { DashboardOperations } from '../components/dashboard/DashboardOperations
 import {OpenAccountModal} from "../modals/OpenAccountModel.tsx";
 import {useCreditsQuery} from "../queries/credits.queries.ts";
 import {CreditCard} from "../components/credits/CreditCard.tsx";
+import {OpenCreditModal} from "../modals/OpenCreditModal.tsx";
 
 export const DashboardPage = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const token = useAppSelector((state) => state.auth.token);
     const { data: credits } = useCreditsQuery();
+    const [openModal, setOpenModal] = useState(false);
 
     useEffect(() => {
         if (!token) navigate('/login');
@@ -26,7 +28,6 @@ export const DashboardPage = () => {
 
     if (isLoading) return <p>Загрузка...</p>;
 
-    console.log(credits?.filter(p => p.status !== "Closed"))
     return (
         <Container size="xl" py="xl">
             <Grid gutter="lg">
@@ -43,7 +44,7 @@ export const DashboardPage = () => {
                             <Button variant="outline" onClick={() => setIsOpenAccountModal(true)}>
                                 Открыть счет
                             </Button>
-                            <Button variant="outline">
+                            <Button variant="outline" onClick={() => setOpenModal(true)}>
                                 Оформить кредит
                             </Button>
                         </Stack>
@@ -71,6 +72,7 @@ export const DashboardPage = () => {
                 Выйти
             </Button>
 
+            {openModal && <OpenCreditModal onClose={() => setOpenModal(false)} />}
             {/* Модалка открытия счета */}
             <OpenAccountModal opened={isOpenAccountModal} onClose={() => setIsOpenAccountModal(false)} />
         </Container>

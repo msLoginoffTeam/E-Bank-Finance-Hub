@@ -11,7 +11,6 @@ interface CreditCardProps {
 
 export const CreditCard = ({ credit, onPayOff, hasOpenButton }: CreditCardProps) => {
     const [isPayOffModalOpen, setIsPayOffModalOpen] = useState(false);
-    console.log(credit)
     return (
         <div className="creditCard">
             <Card shadow="sm" padding="lg" radius="md" withBorder>

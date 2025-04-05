@@ -1,8 +1,7 @@
 import {Table, Text} from '@mantine/core';
 import { OperationRow } from './OperationRow';
 
-export const OperationList = ({ operations }: { operations: any[] }) => {
-    console.log(operations);
+export const OperationList = ({ operations, limit }: { operations: any[], limit?: number }) => {
     return (
         <Table>
             <Table.Thead>
@@ -12,7 +11,7 @@ export const OperationList = ({ operations }: { operations: any[] }) => {
                 </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-                {operations ? operations.map(op => <OperationRow key={op.time} operation={op} />) : <Text >Нет операций</Text>}
+                {operations ? operations.slice(0, limit).map(op => <OperationRow key={op.time} operation={op} />) : <Text >Нет операций</Text>}
             </Table.Tbody>
         </Table>
     );

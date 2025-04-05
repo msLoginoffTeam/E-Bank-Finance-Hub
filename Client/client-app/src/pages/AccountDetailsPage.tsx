@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {useAccountsQuery, useCloseAccountMutation} from '../queries/accounts.queries';
-import { Card, Stack, Title, Text, Button, Group, Modal } from '@mantine/core';
+import {Card, Stack, Title, Text, Button, Group, Modal, ScrollArea} from '@mantine/core';
 import { useState, useMemo } from 'react';
 import {useOperationsQuery} from "../queries/operations.queries.ts";
 
@@ -29,8 +29,6 @@ export const AccountDetailsPage = () => {
         setIsCloseModalOpen(false);
     };
 
-    console.log(account)
-    console.log(operations)
     return (
         <Stack>
             {/* Информация о счете */}
@@ -49,9 +47,10 @@ export const AccountDetailsPage = () => {
             </Card>
 
             {/* История операций */}
-            <Card shadow="lg" p="md">
+            <Card shadow="lg" p="md" style={{ flex: 1 }}>
                 <Title order={3}>История операций</Title>
-                <Stack>
+                <ScrollArea style={{ height: "75vh" }}>
+                <Stack >
                     {operations.map((operation : any) => (
                         <Group key={operation.id}>
                             <span>{operation.operationType === 'Income' ? 'Пополнение' : 'Списание'}</span>
@@ -59,6 +58,7 @@ export const AccountDetailsPage = () => {
                         </Group>
                     ))}
                 </Stack>
+                </ScrollArea>
             </Card>
 
             {/* Модалка подтверждения закрытия счета */}

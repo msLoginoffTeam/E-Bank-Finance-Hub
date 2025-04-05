@@ -6,7 +6,7 @@ export const DashboardOperations = ({ operations }: { operations: any[] }) => {
     return (
         <Card shadow="lg" p="md">
             <Title order={3} mb="sm">История операций</Title>
-            <OperationList operations={operations} />
+            <OperationList operations={operations} limit={20} />
             {operations ? <Button disabled={!operations} fullWidth mt="md" component={Link} to="/operations">
                 Все операции
             </Button> : undefined}
