@@ -637,4 +637,23 @@ public class CreditService : ICreditService
             throw new Exception(ex.Message);
         }
     }
+
+    public async Task<RatingResponseDTO> GetRatingAsync(Guid ClientId)
+    {
+        var rating = new RatingResponseDTO
+        {
+            ClientId = ClientId,
+            Rating = 0
+        };
+        using (var bus = RabbitHutch.CreateBus("host=localhost"))
+        {
+            var response = await bus.Rpc.RequestAsync<Guid, int?>(ClientId);
+            if(response == null)
+            {
+                throw new CustomException("Account not found", "GetRatingAsync", "AccountId", 404);
+            }
+            rating.Rating = (int)response;
+        }
+        return rating;
+    }
 }

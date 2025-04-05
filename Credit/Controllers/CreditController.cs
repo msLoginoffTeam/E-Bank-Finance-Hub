@@ -1,4 +1,5 @@
 ﻿using Credit_Api.Models.requestModels;
+using Credit_Api.Models.responseModels;
 using CreditService_Patterns.IServices;
 using CreditService_Patterns.Models.innerModels;
 using hitscord_net.Models.requestModels;
@@ -193,6 +194,44 @@ public class CreditControllers : ControllerBase
             var ClientId = Guid.Parse(User.Claims.ToList()[0].Value);
             var paymentResult = await _creditService.PayOffTheLoanAsync(ClientId, data);
             return Ok(paymentResult);
+        }
+        catch (CustomException ex)
+        {
+            return StatusCode(ex.Code, new { Object = ex.Object, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Client, Employee, Manager")]
+    [HttpGet]
+    [Route("GetCreditRating")]
+    public async Task<IActionResult> GetCreditRating([FromQuery] Guid? ClientId)
+    {
+        try
+        {
+            var Role = User.Claims.ToList()[2].Value;
+            var UserId = Guid.Parse(User.Claims.ToList()[0].Value);
+            RatingResponseDTO rating;
+            switch (Role)
+            {
+                case "Client":
+                    rating = await _creditService.GetRatingAsync(UserId);
+                    break;
+                case "Employee":
+                    if (ClientId == null) throw new CustomException("ClientId required for this role", "CetCreditRating", "ClientId", 404);
+                    rating = await _creditService.GetRatingAsync((Guid)ClientId);
+                    break;
+                case "Manager":
+                    if (ClientId == null) throw new CustomException("ClientId required for this role", "CetCreditRating", "ClientId", 404);
+                    rating = await _creditService.GetRatingAsync((Guid)ClientId);
+                    break;
+                default:
+                    throw new CustomException("Role not found", "CetCreditRating", "Role", 404);
+            }
+            return Ok(rating);
         }
         catch (CustomException ex)
         {

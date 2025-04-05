@@ -16,9 +16,9 @@ namespace Core_Api.Services.Utils
         private List<ClientOperationsBroadcast> _clients { get; set; }
 
         private readonly IServiceProvider _serviceProvider;
-        private Common.CreditOperationType Configuration { get; set; }
+        private Common.AuthenticationConfiguration Configuration { get; set; }
 
-        public WebSocketServerManager(Common.CreditOperationType Configuration, IServiceProvider serviceProvider)
+        public WebSocketServerManager(Common.AuthenticationConfiguration Configuration, IServiceProvider serviceProvider)
         {
             this.Configuration = Configuration;
             _serviceProvider = serviceProvider;

@@ -100,6 +100,19 @@ namespace Core.Services.Utils
                     else return true;
                 }
             }, configure: x => x.WithQueueName("AccountExistCheck"));
+
+
+            _bus.Rpc.Respond<Guid, int?>(ClientId =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    var client = accountService.GetClient(ClientId);
+                    if (client == null) { return null; }
+                    else return client.Rating;
+                }
+            });
         }
     }
 }

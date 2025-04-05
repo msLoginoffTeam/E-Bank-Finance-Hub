@@ -15,8 +15,6 @@ namespace Core.Data.DTOs.Responses
         public bool IsClosed { get; set; }
 
 
-        public int Rating { get; set; }
-
         public AccountResponse(Account Account)
         {
             Id = Account.Id;
@@ -25,7 +23,6 @@ namespace Core.Data.DTOs.Responses
             Currency = Account.Currency;
             Balance = Account.Balance;
             IsClosed = Account.IsClosed;
-            Rating = Account.Client.Rating != null ? Account.Client.Rating.Value : 0;
         }
     }
 }
