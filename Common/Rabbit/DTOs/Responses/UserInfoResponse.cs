@@ -10,5 +10,7 @@ namespace Common.Data.DTOs
         public List<string> Roles { get; set; }
 
         public string error { get; set; }
+
+        public UserInfoResponse() {}
     }
 }

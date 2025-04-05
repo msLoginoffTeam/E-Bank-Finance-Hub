@@ -1,4 +1,5 @@
 ﻿using Common.ErrorHandling;
+using Common.Models;
 using Common.Rabbit.DTOs.Requests;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
@@ -102,17 +103,17 @@ namespace Core.Services.Utils
             }, configure: x => x.WithQueueName("AccountExistCheck"));
 
 
-            _bus.Rpc.Respond<Guid, int?>(ClientId =>
+            _bus.Rpc.Respond<GetRatingRequest, int>(ClientId =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    var client = accountService.GetClient(ClientId);
-                    if (client == null) { return null; }
-                    else return client.Rating;
+                    var client = accountService.GetClient(ClientId.ClientId);
+                    if (client == null) { return -1; }
+                    else return (int)client.Rating;
                 }
-            });
+            }, configure: x => x.WithQueueName("GetRating"));
         }
     }
 }
