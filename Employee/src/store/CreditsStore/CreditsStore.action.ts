@@ -6,6 +6,7 @@ import {
   CLOSE_CREDIT_PLAN_ACTION_NAME,
   CREATE_CREDIT_PLAN_ACTION_NAME,
   GET_CLIENT_CREDIT_HISTORY_ACTION_NAME,
+  GET_CLIENT_CREDIT_RATING_ACTION_NAME,
   GET_CLIENT_CREDITS_ACTION_NAME,
   GET_CREDITS_PLANS_ACTION_NAME,
 } from './CreditsStore.const';
@@ -13,6 +14,7 @@ import {
   ClientCreditForEmployeeResponse,
   CreditPlan,
   GetCredidtsPlansResponse,
+  RatingResponse,
 } from './CreditsStore.types';
 
 export const getCreditsPlans = createAsyncThunk<
@@ -109,6 +111,27 @@ export const getClientCreditHistory = createAsyncThunk<
   async ({ accessToken, id }, { rejectWithValue }) => {
     try {
       return await CreditsAPI.getCreditHistory(accessToken, id);
+    } catch (e) {
+      console.log(e);
+
+      if (e instanceof AxiosError) {
+        return rejectWithValue(e.response?.data?.message);
+      }
+
+      return rejectWithValue('Произошла ошибка');
+    }
+  },
+);
+
+export const getCreditRating = createAsyncThunk<
+  RatingResponse,
+  { accessToken: string; clientId: string },
+  { rejectValue: string }
+>(
+  GET_CLIENT_CREDIT_RATING_ACTION_NAME,
+  async ({ accessToken, clientId }, { rejectWithValue }) => {
+    try {
+      return await CreditsAPI.getCreditRating(accessToken, clientId);
     } catch (e) {
       console.log(e);
 

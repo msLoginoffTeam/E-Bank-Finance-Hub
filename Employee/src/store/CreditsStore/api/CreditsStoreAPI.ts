@@ -3,6 +3,7 @@ import {
   CREATE_CREDITS_PLAN,
   GET_CLIENT_CREDITS,
   GET_CREDIT_HISTORY,
+  GET_CREDIT_RATING,
   GET_CREDITS_PLAN,
 } from './CreditsStoreAPI.const';
 
@@ -13,6 +14,7 @@ import {
   CreditPlan,
   GetCredidtsPlansResponse,
   Pagination,
+  RatingResponse,
 } from '~/store/CreditsStore';
 
 export const getCreditsPlan = async (
@@ -104,6 +106,23 @@ export const getCreditHistory = async (
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  return data;
+};
+
+export const getCreditRating = async (
+  accessToken: string,
+  clientId: string,
+): Promise<RatingResponse> => {
+  const { data } = await axiosInstance.get<RatingResponse>(
+    GET_CREDIT_RATING(clientId),
+    {
+      baseURL: `${BASE_URL}:8081`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
 
   return data;
 };

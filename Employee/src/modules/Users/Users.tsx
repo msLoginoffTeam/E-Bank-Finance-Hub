@@ -54,10 +54,13 @@ export const Users = () => {
     if (accessToken) {
       const result = await dispatch(
         createUser({
-          email: values.email,
-          password: values.password,
-          fullName: values.fullName,
-          userRole: values.userRole,
+          accessToken,
+          userData: {
+            email: values.email,
+            password: values.password,
+            fullName: values.fullName,
+            userRole: values.userRole,
+          },
         }),
       );
 

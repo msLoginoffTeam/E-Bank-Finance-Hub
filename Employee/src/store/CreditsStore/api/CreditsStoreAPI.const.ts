@@ -5,3 +5,6 @@ export const GET_CLIENT_CREDITS = (id: string) =>
   `/Api/Credit/GetCreditsList/Employee?ClientId=${id}&ElementsNumber=1000&PageNumber=1`;
 export const GET_CREDIT_HISTORY = (id: string) =>
   `/Api/Credit/GetCreditHistory/Employee?CreditId=${id}`;
+
+export const GET_CREDIT_RATING = (id: string) =>
+  `/Api/Credit/GetCreditRating?ClientId=${id}`;

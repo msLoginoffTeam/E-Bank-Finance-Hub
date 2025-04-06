@@ -36,23 +36,26 @@ export const loginEmployee = createAsyncThunk<
 
 export const createUser = createAsyncThunk<
   void,
-  CreateUser,
+  { accessToken: string; userData: CreateUser },
   { rejectValue: string }
->(CREATE_USER_ACTION_NAME, async (data, { rejectWithValue }) => {
-  try {
-    await AuthAPI.register(data);
-  } catch (e) {
-    console.log(e);
+>(
+  CREATE_USER_ACTION_NAME,
+  async ({ accessToken, userData }, { rejectWithValue }) => {
+    try {
+      await AuthAPI.register(accessToken, userData);
+    } catch (e) {
+      console.log(e);
 
-    if (e instanceof AxiosError) {
-      return rejectWithValue(
-        e.response?.data?.message || e.response?.data?.errors.FullName,
-      );
+      if (e instanceof AxiosError) {
+        return rejectWithValue(
+          e.response?.data?.message || e.response?.data?.errors.FullName,
+        );
+      }
+
+      return rejectWithValue('Произошла ошибка');
     }
-
-    return rejectWithValue('Произошла ошибка');
-  }
-});
+  },
+);
 
 export const getEmployeeProfile = createAsyncThunk<
   EmployeeProfile,

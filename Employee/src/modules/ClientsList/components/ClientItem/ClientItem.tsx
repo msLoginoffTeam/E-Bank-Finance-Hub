@@ -1,4 +1,13 @@
-import { Avatar, Badge, Button, Card, Group, Stack, Text } from '@mantine/core';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Stack,
+  Text,
+  useMantineColorScheme,
+} from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 
 import { ClientItemProps } from './ClientItem.types';
@@ -10,6 +19,7 @@ export const ClientItem = ({
   isBlocked,
 }: ClientItemProps) => {
   const navigate = useNavigate();
+  const { colorScheme } = useMantineColorScheme();
 
   return (
     <Card padding="lg" radius="xl" w="100%" maw={600}>
@@ -30,6 +40,7 @@ export const ClientItem = ({
             size="md"
             radius="xl"
             onClick={() => navigate(`/clients/${id}`)}
+            bg={colorScheme === 'dark' ? '#2e2e2e' : ''}
           >
             Открыть детальную информацию
           </Button>

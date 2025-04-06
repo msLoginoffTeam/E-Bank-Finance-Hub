@@ -25,7 +25,10 @@ export const login = async (
   return data;
 };
 
-export const register = async (data: CreateUser): Promise<void> => {
+export const register = async (
+  accessToken: string,
+  data: CreateUser,
+): Promise<void> => {
   await axiosInstance.post<void>(
     REGISTER(data.userRole),
     {
@@ -35,6 +38,9 @@ export const register = async (data: CreateUser): Promise<void> => {
     },
     {
       baseURL: `${BASE_URL}:8082`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
   );
 };

@@ -1,13 +1,18 @@
 import {
   Avatar,
   Badge,
+  Button,
   Card,
+  Collapse,
   Group,
   Loader,
+  RingProgress,
   Stack,
   Text,
   Title,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -25,8 +30,10 @@ export const ClientDetails = () => {
   const { client, isLoading } = useAppSelector((state) => state.clients);
   const { accounts } = useAppSelector((state) => state.accounts);
   const accountsLoading = useAppSelector((state) => state.accounts.isLoading);
-  const { credits } = useAppSelector((state) => state.credits);
+  const { credits, rating } = useAppSelector((state) => state.credits);
   const creditsLoading = useAppSelector((state) => state.credits.isLoading);
+  const { hiddenAccounts } = useAppSelector((state) => state.app);
+  const [opened, { toggle }] = useDisclosure(false);
 
   const { id } = useParams();
 
@@ -64,20 +71,26 @@ export const ClientDetails = () => {
             <Loader color="blue" />
           ) : (
             <>
-              {accounts.length === 0 ? (
+              {accounts.filter(
+                (account) => !hiddenAccounts.includes(account.id),
+              ).length === 0 ? (
                 <Text c="dimmed">Нет счетов</Text>
               ) : (
-                accounts.map((acc) => (
-                  <AccountItem
-                    key={acc.id}
-                    id={acc.id}
-                    name={acc.name}
-                    balanceInRubles={acc.balanceInRubles}
-                    isClosed={acc.isClosed}
-                    operations={acc.operations}
-                    isLoadingOperations={acc.isLoadingOperations}
-                  />
-                ))
+                accounts
+                  .filter((account) => !hiddenAccounts.includes(account.id))
+                  .map((acc) => (
+                    <AccountItem
+                      key={acc.id}
+                      id={acc.id}
+                      name={acc.name}
+                      balance={acc.balance}
+                      currency={acc.currency}
+                      isClosed={acc.isClosed}
+                      operations={acc.operations}
+                      isLoadingOperations={acc.isLoadingOperations}
+                      isHidden={false}
+                    />
+                  ))
               )}
             </>
           )}
@@ -103,6 +116,52 @@ export const ClientDetails = () => {
                   />
                 ))
               )}
+            </>
+          )}
+          <Title order={4}>Кредитный рейтинг:</Title>
+          <RingProgress
+            label={
+              <Text c="blue" ta="center" size="xl">
+                {rating}
+              </Text>
+            }
+            sections={[{ value: rating / 10, color: 'blue' }]}
+          />
+          {accounts.filter((account) => hiddenAccounts.includes(account.id))
+            .length > 0 && (
+            <>
+              <Title order={4}>Скрытые счета:</Title>
+              <Button
+                variant="light"
+                radius="xl"
+                rightSection={opened ? <ChevronUp /> : <ChevronDown />}
+                onClick={toggle}
+              >
+                Раскрыть скрытые счета
+              </Button>
+              <Collapse in={opened}>
+                {accountsLoading ? (
+                  <Loader color="blue" />
+                ) : (
+                  <>
+                    {accounts
+                      .filter((account) => hiddenAccounts.includes(account.id))
+                      .map((acc) => (
+                        <AccountItem
+                          key={acc.id}
+                          id={acc.id}
+                          name={acc.name}
+                          balance={acc.balance}
+                          currency={acc.currency}
+                          isClosed={acc.isClosed}
+                          operations={acc.operations}
+                          isLoadingOperations={acc.isLoadingOperations}
+                          isHidden={true}
+                        />
+                      ))}
+                  </>
+                )}
+              </Collapse>
             </>
           )}
         </Stack>

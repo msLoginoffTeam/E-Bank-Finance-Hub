@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import { AccountsReducer } from './AccountsStore';
+import { AppReducer } from './AppStore';
 import { AuthReducer } from './AuthStore';
 import { ClientsReducer } from './ClientsStore';
 import { CreditsReducer } from './CreditsStore';
@@ -11,6 +12,7 @@ export const store = configureStore({
     auth: AuthReducer,
     clients: ClientsReducer,
     credits: CreditsReducer,
+    app: AppReducer,
   },
 });
 
