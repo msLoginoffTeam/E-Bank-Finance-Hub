@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace CreditService_Patterns.Migrations
+namespace Credit_Api.Migrations
 {
     [DbContext(typeof(CreditServiceContext))]
     partial class CreditServiceContextModelSnapshot : ModelSnapshot
@@ -31,8 +31,8 @@ namespace CreditService_Patterns.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
-                    b.Property<float>("Amount")
-                        .HasColumnType("real");
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
@@ -43,8 +43,8 @@ namespace CreditService_Patterns.Migrations
                     b.Property<Guid>("CreditPlanId")
                         .HasColumnType("uuid");
 
-                    b.Property<float>("RemainingAmount")
-                        .HasColumnType("real");
+                    b.Property<int>("RemainingAmount")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -62,11 +62,14 @@ namespace CreditService_Patterns.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ClientCreditId")
                         .HasColumnType("uuid");
 
-                    b.Property<float>("PaymentAmount")
-                        .HasColumnType("real");
+                    b.Property<int>("PaymentAmount")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("timestamp with time zone");

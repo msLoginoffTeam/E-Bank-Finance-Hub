@@ -13,8 +13,8 @@ public class GetCreditRequestDTO
     public required Guid CreditPlanId { get; set; }
 
     [Required(ErrorMessage = "Amount is required.")]
-    [Range(10.0, float.MaxValue, ErrorMessage = "Amount must be greater than 10.0")]
-    public required float Amount { get; set; }
+    [Range(10.0, int.MaxValue, ErrorMessage = "Amount must be greater than 10.0")]
+    public required int Amount { get; set; }
 
     [Required(ErrorMessage = "Closing date id is required.")]
     public required DateTime ClosingDate { get; set; }

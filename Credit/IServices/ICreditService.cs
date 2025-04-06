@@ -19,6 +19,7 @@ public interface ICreditService
     Task<Guid> CloseCreditPlanAsync(Guid CreditPlanId);
     Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData);
     Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData);
+    Task<RatingResponseDTO> GetRatingAsync(Guid ClientId);
 
 
 

@@ -1,7 +1,8 @@
-﻿using Core.Data;
+﻿using Common.ErrorHandling;
+using Common.Rabbit;
+using Core.Data;
 using Core.Data.Models;
-using Core.Services.Utils.ErrorHandling;
-using Core_Api.Data.DTOs.Requests;
+using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +11,11 @@ namespace Core.Services
     public class AccountService
     {
         private readonly AppDBContext _context;
-        private readonly IBus _bus;
-        public AccountService(AppDBContext context)
+        private readonly CoreRabbit _rabbit;
+        public AccountService(AppDBContext context, CoreRabbit rabbit)
         {
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=rabbitmq");
+            _rabbit = rabbit;
         }
 
         public Client GetClient(Guid ClientId)
@@ -57,9 +58,21 @@ namespace Core.Services
             return Account;
         }
 
+        public Account GetAccount(string Number)
+        {
+            Account? Account = _context.Accounts.Include(Account => Account.Client).FirstOrDefault(Account => Account.Number == Number);
+
+            if (Account == null)
+            {
+                throw new ErrorException(404, "Счета с таким номером нет.");
+            }
+
+            return Account;
+        }
+
         public List<Account> GetAccounts(Guid ClientId)
         {
-            return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
+            return _context.Accounts.Include(a => a.Client).Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
         }
 
         public void CreateClient(Guid ClientId)
@@ -76,7 +89,7 @@ namespace Core.Services
 
         public void CloseAccount(Account Account)
         {
-            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
+            var AccountHaveCredit = _rabbit._bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
 
             if (!AccountHaveCredit)
             {

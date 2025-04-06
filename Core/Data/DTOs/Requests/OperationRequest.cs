@@ -1,18 +1,20 @@
-﻿using Core.Data.Models;
+﻿using Common.Rabbit.DTOs.Requests;
+using Core.Data.Models;
 
 namespace Core.Data.DTOs.Requests
 {
     public class OperationRequest
     {
-        public float AmountInRubles { get; set; }
+        public int Amount { get; set; }
 
-        public OperationType OperationType { get; set; }
-    }
+        public OperationType? OperationType { get; set; }
 
-    public class CashOperationRequest : OperationRequest {}
+        public OperationRequest() {}
 
-    public class CreditOperationRequest : OperationRequest
-    {
-        public Guid CreditId { get; set; }
+        public OperationRequest(RabbitOperationRequest RabbitOperationRequest)
+        {
+            Amount = RabbitOperationRequest.Amount;
+            OperationType = RabbitOperationRequest.OperationType != null ? (OperationType)Enum.Parse(typeof(OperationType), RabbitOperationRequest.OperationType) : null;
+        }
     }
 }

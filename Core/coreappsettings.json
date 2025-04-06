@@ -1,19 +1,12 @@
 {
-    "ConnectionStrings": {
-        "DataBase": "Server=coreDB;Port=5432;Database=CoreDB;Username=postgres;Password=admin"
-    },
+  "ConnectionStrings": {
+    "DataBase": "Host=localhost;Database=CoreDB;Username=postgres;Password=1234"
+  },
     "Logging": {
         "LogLevel": {
             "Default": "Information",
             "Microsoft.AspNetCore": "Warning"
         }
     },
-    "AllowedHosts": "*",
-    "Authentication": {
-        "AccessTokenSecret": "eGZ5RlduZXlalksdjf234Z2lqV1QzZkN1TU5sQnasdffad",
-        "AccessTokenExpirationSeconds": "600",
-        "RefreshTokenExpirationHours": "24",
-        "Issuer": "InternetBanking",
-        "Audience": "InternetBanking/api"
-    }
+    "AllowedHosts": "*"
 }

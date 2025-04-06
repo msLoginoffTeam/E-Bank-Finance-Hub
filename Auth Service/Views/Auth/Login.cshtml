@@ -1,0 +1,27 @@
+﻿@{
+    ViewBag.Title = "Вход";
+}
+
+<div class="d-flex align-items-center justify-content-center min-vh-100">
+    <div class="container col-md-4 border border-secondary rounded p-4" style="background-color: white;">
+        <h2 class="text-center">Вход</h2>
+
+        @using (Html.BeginForm())
+        {
+            <div class="mb-3">
+                <label for="Email" class="form-label">Email</label>
+                <input name="LoginRequest.Email" type="text" class="form-control" placeholder="Введите ваш Email" required />
+            </div>
+
+            <div class="mb-3">
+                <label for="Password" class="form-label">Пароль</label>
+                <input name="LoginRequest.Password" type="password" class="form-control" placeholder="Введите ваш пароль" required />
+            </div>
+
+            <input type="hidden" name="IsClient" value="@ViewBag.IsClient.ToString()" />
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+        }
+    </div>
+</div>  
