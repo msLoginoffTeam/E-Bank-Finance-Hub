@@ -33,10 +33,11 @@ namespace Core_Api.Services.Utils
             {
                 Socket.OnOpen = () =>
                 {
-                    var User = AuthenticationExtensions.ValidateToken(Socket.ConnectionInfo.Headers["Authorization"].Substring(7), Configuration);
+                    var Params = Socket.ConnectionInfo.Path.Substring(1).Split('&');
+                    var User = AuthenticationExtensions.ValidateToken(Params[0].Substring(6), Configuration);
                     if (User == null) throw new ErrorException(401, "Аутентификация не прошла, передайте валидный токен");
 
-                    Guid AccountId = new Guid(Socket.ConnectionInfo.Path.Substring(1));
+                    Guid AccountId = new Guid(Params[1].Substring(10));
                     Guid UserId = new Guid(User.Claims.ToList().First().Value);
                     string Role = User.Claims.ToList()[2].Value;
 
@@ -102,9 +103,11 @@ namespace Core_Api.Services.Utils
 
                 Socket.OnClose = () =>
                 {
-                    var User = AuthenticationExtensions.ValidateToken(Socket.ConnectionInfo.Headers["Authorization"].Substring(7), Configuration);
+                    var Params = Socket.ConnectionInfo.Path.Substring(1).Split('&');
+                    var User = AuthenticationExtensions.ValidateToken(Params[0].Substring(6), Configuration);
+                    if (User == null) throw new ErrorException(401, "Аутентификация не прошла, передайте валидный токен");
 
-                    Guid AccountId = new Guid(Socket.ConnectionInfo.Path.Substring(1));
+                    Guid AccountId = new Guid(Params[1].Substring(10));
                     Guid UserId = new Guid(User.Claims.ToList().First().Value);
                     string Role = User.Claims.ToList()[2].Value;
 
