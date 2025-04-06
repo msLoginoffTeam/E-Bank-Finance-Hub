@@ -15,7 +15,7 @@ namespace Core.Services
             _context = context;
         }
 
-        public void MakeOperation(Operation Operation)
+        public bool? MakeOperation(Operation Operation)
         {
             if (Operation.TargetAccount.IsClosed) throw new ErrorException(403, "Целевой счет закрыт.");
 
@@ -44,19 +44,20 @@ namespace Core.Services
                 }
                 else
                 {
-                    creditOperation.TargetAccount.Balance -= creditOperation.Amount;
-                    if (creditOperation.TargetAccount.Balance < 0)
+                    var sum = creditOperation.TargetAccount.Balance - creditOperation.Amount;
+                    if (sum < 0)
                     {
                         UserCli.Rating = UserCli.Rating > 0 ? --UserCli.Rating : UserCli.Rating;
                         creditOperation.IsSuccessful = false;
                         _context.Operations.Add(Operation);
                         _context.Clients.Update(UserCli);
                         _context.SaveChanges();
-                        throw new ErrorException(403, "На счете не хватает денег для операции.");
+                        return false;
                     }
                     UserCli.Rating = UserCli.Rating < 1000 ? ++UserCli.Rating : UserCli.Rating;
                     BankAccount.Balance += Operation.Amount;
                     creditOperation.IsSuccessful = true;
+                    creditOperation.TargetAccount.Balance = sum;
                 }
                 _context.Operations.Add(Operation);
                 _context.Clients.Update(UserCli);
@@ -73,6 +74,9 @@ namespace Core.Services
 
             _context.Accounts.Update(Operation.TargetAccount);
             _context.SaveChanges();
+
+
+            return null;
         }
 
         public int CountConvertedAmount(Account Sender, Account Target, int SenderAmount)

@@ -69,7 +69,21 @@ namespace Core.Services.Utils
                             Operation = new CashOperation(new OperationRequest(Request), Account);
                             OperationResponse = new CashOperationResponse(Operation as CashOperation);
                         }
-                        operationService.MakeOperation(Operation);
+                        var res = operationService.MakeOperation(Operation);
+
+                        if(Request is CreditOperationRequest CreRequest)
+                        {
+                            if(res == null) 
+                            {
+                                Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, true);
+                                OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
+                            }
+                            else
+                            {
+                                Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, false);
+                                OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
+                            }
+                        }
 
                         var jsonMessage = System.Text.Json.JsonSerializer.Serialize(OperationResponse, new JsonSerializerOptions()
                         {
@@ -80,6 +94,11 @@ namespace Core.Services.Utils
                         foreach (var Socket in Sockets != null ? Sockets : new List<IWebSocketConnection>() )
                         {
                             Socket.Send(jsonMessage);
+                        }
+
+                        if(res != null) 
+                        {
+                            throw new ErrorException(403, "На счете не хватает денег для операции.");
                         }
                     }
                     catch (ErrorException ex)
