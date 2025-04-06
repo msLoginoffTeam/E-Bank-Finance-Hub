@@ -52,14 +52,15 @@ namespace Core.Data.Models
     {
         public Guid CreditId { get; set; }
         public CreditOperationType? Type { get; set; }
+        public bool? IsSuccessful { get; set; }
 
         public CreditOperation() {}
-        public CreditOperation(OperationRequest Request, Account TargetAccount, Guid CreditId, CreditOperationType? type) : base(Request, TargetAccount)
+        public CreditOperation(OperationRequest Request, Account TargetAccount, Guid CreditId, CreditOperationType? type, bool? isSuccessful) : base(Request, TargetAccount)
         {
             this.CreditId = CreditId;
             OperationCategory = OperationCategory.Credit;
             Type = type;
-
+            IsSuccessful = isSuccessful;
         }
     }
 

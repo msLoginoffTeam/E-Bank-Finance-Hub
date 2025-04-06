@@ -32,26 +32,31 @@ namespace Core.Services
                 }
                 _context.Operations.Add(Operation);
             }
-            else if (Operation is CreditOperation)
+            else if (Operation is CreditOperation creditOperation)
             {
-                Account BankAccount = _context.Accounts.Where(Account => Account.Client.Id == Guid.Empty && Account.Currency == Operation.TargetAccount.Currency).First();
-                Client UserCli = _context.Clients.Where(c => c.Id == Operation.TargetAccount.Client.Id).First();
-                if (Operation.OperationType == OperationType.Income)
+                Account BankAccount = _context.Accounts.Where(Account => Account.Client.Id == Guid.Empty && Account.Currency == creditOperation.TargetAccount.Currency).First();
+                Client UserCli = _context.Clients.Where(c => c.Id == creditOperation.TargetAccount.Client.Id).First();
+                if (creditOperation.OperationType == OperationType.Income)
                 {
-                    BankAccount.Balance -= Operation.Amount;
+                    BankAccount.Balance -= creditOperation.Amount;
                     if (BankAccount.Balance < 0) throw new ErrorException(403, "На счете банка не хватает денег для операции.");
-                    Operation.TargetAccount.Balance += Operation.Amount;
+                    creditOperation.TargetAccount.Balance += creditOperation.Amount;
                 }
                 else
                 {
-                    Operation.TargetAccount.Balance -= Operation.Amount;
-                    if (Operation.TargetAccount.Balance < 0)
+                    creditOperation.TargetAccount.Balance -= creditOperation.Amount;
+                    if (creditOperation.TargetAccount.Balance < 0)
                     {
                         UserCli.Rating = UserCli.Rating > 0 ? --UserCli.Rating : UserCli.Rating;
+                        creditOperation.IsSuccessful = false;
+                        _context.Operations.Add(Operation);
+                        _context.Clients.Update(UserCli);
+                        _context.SaveChanges();
                         throw new ErrorException(403, "На счете не хватает денег для операции.");
                     }
                     UserCli.Rating = UserCli.Rating < 1000 ? ++UserCli.Rating : UserCli.Rating;
                     BankAccount.Balance += Operation.Amount;
+                    creditOperation.IsSuccessful = true;
                 }
                 _context.Operations.Add(Operation);
                 _context.Clients.Update(UserCli);

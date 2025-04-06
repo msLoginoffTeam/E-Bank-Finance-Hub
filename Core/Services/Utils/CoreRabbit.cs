@@ -51,7 +51,7 @@ namespace Core.Services.Utils
 
                         if (Request is CreditOperationRequest CreditRequest)
                         {
-                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId, CreditRequest.Type);
+                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId, CreditRequest.Type, null);
                             OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
                         }
                         else if (Request is TransferOperationRequest TransferOperationRequest)
