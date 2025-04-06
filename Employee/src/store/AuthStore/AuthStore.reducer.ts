@@ -34,6 +34,7 @@ export const AuthSlice = createSlice({
       localStorage.setItem('refreshToken', action.payload.refreshToken);
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
+      state.isLoggedIn = true;
     },
     logout: (state) => {
       state.accessToken = null;

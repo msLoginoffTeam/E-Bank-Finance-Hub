@@ -5,8 +5,8 @@ export interface AccountState {
 }
 
 export interface BaseOperation {
-  amountInRubles: number;
-  time: Date;
+  amount: number;
+  time: string;
   operationType: OperationType;
   operationCategory: OperationCategory;
 }
@@ -21,6 +21,12 @@ export enum OperationCategory {
   Cash = 'Cash',
 }
 
+export enum Currency {
+  Ruble = 'Ruble',
+  Dollar = 'Dollar',
+  Euro = 'Euro',
+}
+
 export interface CashOperation extends BaseOperation {
   operationCategory: OperationCategory.Cash;
 }
@@ -28,6 +34,7 @@ export interface CashOperation extends BaseOperation {
 export interface CreditOperation extends BaseOperation {
   operationCategory: OperationCategory.Credit;
   creditId: string;
+  isSuccessful?: boolean | null;
 }
 
 export type Operation = CashOperation | CreditOperation;
@@ -35,7 +42,8 @@ export type Operation = CashOperation | CreditOperation;
 export interface Account {
   id: string;
   name: string;
-  balanceInRubles: number;
+  balance: number;
+  currency: Currency;
   isClosed: boolean;
   operations: Operation[];
   isLoadingOperations?: boolean;

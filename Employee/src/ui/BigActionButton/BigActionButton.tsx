@@ -1,4 +1,10 @@
-import { Button, Flex, Group, Text } from '@mantine/core';
+import {
+  Button,
+  Flex,
+  Group,
+  Text,
+  useMantineColorScheme,
+} from '@mantine/core';
 
 import { BigActionButtonProps } from './BigActionButton.types';
 
@@ -7,6 +13,8 @@ export const BigActionButton = ({
   label,
   onClick,
 }: BigActionButtonProps) => {
+  const { colorScheme } = useMantineColorScheme();
+
   return (
     <Button
       variant="white"
@@ -23,6 +31,8 @@ export const BigActionButton = ({
           width: '100%',
         },
       }}
+      bg={colorScheme === 'dark' ? '#2e2e2e' : 'white'}
+      c={colorScheme === 'dark' ? 'white' : 'dark'}
       onClick={onClick}
     >
       <Flex w="100%" h="100%" p="md" direction="column" justify="space-between">

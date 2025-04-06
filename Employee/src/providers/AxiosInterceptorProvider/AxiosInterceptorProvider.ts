@@ -23,11 +23,11 @@ export const AxiosInterceptorProvider = ({
         if (
           error.response?.status === 401 &&
           refreshToken &&
-          !error.config.url.includes('/api/users/refresh')
+          !error.config.url.includes('/Auth/Refresh?IsClient=false')
         ) {
           try {
             const { data } = await axiosInstance.post(
-              `${BASE_URL}:8082/api/users/refresh`,
+              `${BASE_URL}:8083/Auth/Refresh?IsClient=false`,
               {},
               {
                 headers: {

@@ -1,18 +1,20 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 import {
   closeCreditPlan,
   createCreditPlan,
   getClientCreditHistory,
   getClientCredits,
+  getCreditRating,
   getCreditsPlans,
 } from './CreditsStore.action';
 import { CREDITS_SLICE_NAME } from './CreditsStore.const';
-import { CreditsState, CreditStatus } from './CreditsStore.types';
+import { CreditsState, CreditStatus, Payment } from './CreditsStore.types';
 
 const initialState: CreditsState = {
   planList: [],
   credits: [],
+  rating: 0,
   isLoading: false,
   error: undefined,
 };
@@ -20,7 +22,29 @@ const initialState: CreditsState = {
 export const CreditsSlice = createSlice({
   name: CREDITS_SLICE_NAME,
   initialState,
-  reducers: {},
+  reducers: {
+    setPayment: (
+      state,
+      action: PayloadAction<{
+        creditId: string;
+        operation: Payment;
+      }>,
+    ) => {
+      const credit = state.credits.find(
+        (credit) => credit.id === action.payload.creditId,
+      );
+
+      if (credit) {
+        credit.paymentHistory = [
+          ...credit.paymentHistory,
+          action.payload.operation,
+        ];
+        credit.remainingAmount =
+          credit.remainingAmount - action.payload.operation.paymentAmount;
+      }
+      state.error = undefined;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getCreditsPlans.pending, (state) => {
@@ -102,10 +126,21 @@ export const CreditsSlice = createSlice({
       .addCase(getClientCreditHistory.rejected, (state, { payload }) => {
         state.isLoading = false;
         state.error = payload;
+      })
+
+      .addCase(getCreditRating.pending, (state) => {
+        state.error = undefined;
+      })
+      .addCase(getCreditRating.fulfilled, (state, { payload }) => {
+        state.rating = payload.rating;
+        state.error = undefined;
+      })
+      .addCase(getCreditRating.rejected, (state, { payload }) => {
+        state.error = payload;
       });
   },
 });
 
-//export const { } = CreditsSlice.actions;
+export const { setPayment } = CreditsSlice.actions;
 
 export const CreditsReducer = CreditsSlice.reducer;

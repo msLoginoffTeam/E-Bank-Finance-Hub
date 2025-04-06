@@ -1,6 +1,7 @@
 export interface CreditsState {
   planList: CreditPlan[];
   credits: ClientCreditForEmployeeResponse[];
+  rating: number;
   isLoading: boolean;
   error?: string;
 }
@@ -58,4 +59,9 @@ export interface Payment {
 export enum PaymentType {
   Automatic,
   ByClient,
+}
+
+export interface RatingResponse {
+  clientId: string;
+  rating: number;
 }
