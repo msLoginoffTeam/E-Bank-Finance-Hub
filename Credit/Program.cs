@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using Quartz;
 using Common;
 using CreditService_Patterns.Services.Utils;
+using UserApi.Services.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,11 +58,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ICreditService, CreditService>();
-builder.Services.AddSingleton(rabbit =>
-{
-    var serviceProvider = rabbit.GetRequiredService<IServiceProvider>();
-    return new CreditRabbit(serviceProvider);
-});
+builder.Services.AddSingleton<CreditRabbit>();
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
@@ -91,6 +88,9 @@ using (var scope = app.Services.CreateScope())
 {
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
+
+    var rabbit = app.Services.GetRequiredService<CreditRabbit>();
+    rabbit = new CreditRabbit(app.Services);
 }
 app.UseCors("AllowAllOrigins");
 

@@ -1,6 +1,7 @@
 ﻿using Common.ErrorHandling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.Eventing.Reader;
 using User_Api.Data.DTOs.Responses;
 using UserApi.Data.DTOs.Requests;
 using UserApi.Data.Models;
@@ -217,6 +218,58 @@ namespace UserApi.Controllers
 
             if (!UnblockedUser.IsBlocked) throw new ErrorException(400, "Пользователь не заблокирован.");
             _userService.UnblockUser(UnblockedUser);
+
+            return Ok();
+        }
+
+        /// <summary>  
+        /// Получение ролей пользователя
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        [Route("get/role/{UserId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult getRole(Guid? UserId)
+        {
+            var role = base.User.Claims.ToList()[2].Value;
+            var selfUserId = base.User.Claims.ToList().First().Value;
+            User User;
+
+            if (UserId != null)
+            {
+                User = _userService.GetUserById((Guid)UserId);
+            }
+            else
+            {
+                User = _userService.GetUserById(new Guid(selfUserId));
+            }
+
+            return Ok(User.Roles.Select(UserRole => UserRole.Role));
+        }
+
+        /// <summary>  
+        /// Изменение ролей пользователя
+        /// </summary>
+        [Authorize(Roles = "Employee, Manager")]
+        [HttpPost]
+        [Route("edit/role/{UserId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult editRole(Guid UserId, List<Role> Roles)
+        {
+            var role = User.Claims.ToList()[2].Value;
+            User EditRoleUser = _userService.GetUserById(UserId);
+
+            if (role == "Employee")
+            {
+                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Manager) || EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Employee)) throw new ErrorException(400, "Работник может менять роли только клиента.");
+            }
+            else
+            {
+                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Manager)) throw new ErrorException(400, "Менеджер не может менять роли другого менеджера.");
+            }
+            if (Roles.Contains(Role.Manager)) throw new ErrorException(400, "Нельзя присовить роль менеджера");
+
+            _userService.EditRoleUser(EditRoleUser, Roles);
 
             return Ok();
         }

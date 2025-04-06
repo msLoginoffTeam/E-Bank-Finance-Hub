@@ -25,9 +25,10 @@ public class CreditService : ICreditService
     private readonly CreditServiceContext _creditContext;
     private readonly CreditRabbit _rabbit;
 
-    public CreditService(CreditServiceContext creditContext)
+    public CreditService(CreditServiceContext creditContext, CreditRabbit rabbit)
     {
         _creditContext = creditContext ?? throw new ArgumentNullException(nameof(creditContext));
+        _rabbit = rabbit;
     }
 
     public async Task<ClientCreditsListForClientResponseDTO> GetCreditsListClientAsync(Guid ClientId, ClientCreditStatusEnum? Status, int ElementsNumber, int PageNumber)
@@ -380,11 +381,8 @@ public class CreditService : ICreditService
             }
 
 
-            using (var bus = RabbitHutch.CreateBus("host=localhost"))
-            {
-                var AccountExists = await bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
-                if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
-            }
+            var AccountExists = await _rabbit._bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
+            if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
 
             var newCredit = new ClientCreditDbModel
             {
@@ -400,18 +398,15 @@ public class CreditService : ICreditService
             await _creditContext.Credit.AddAsync(newCredit);
             await _creditContext.SaveChangesAsync();
 
-            using (var bus = RabbitHutch.CreateBus("host=localhost"))
+            var request = new CreditOperationRequest
             {
-                var request = new CreditOperationRequest
-                {
-                    AccountId = newCredit.AccountId,
-                    ClientId = newCredit.ClientId,
-                    CreditId = newCredit.Id,
-                    Amount = newCredit.Amount,
-                    OperationType = OperationType.Income.ToString()
-                };
-                var response = await bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
-            }
+                AccountId = newCredit.AccountId,
+                ClientId = newCredit.ClientId,
+                CreditId = newCredit.Id,
+                Amount = newCredit.Amount,
+                OperationType = OperationType.Income.ToString()
+            };
+            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
 
             return newCredit.Id;
         }
@@ -444,24 +439,21 @@ public class CreditService : ICreditService
                 AccountId = paymentData.AccountId
             };
 
-            using (var bus = RabbitHutch.CreateBus("host=localhost"))
+            var request = new CreditOperationRequest
             {
-                var request = new CreditOperationRequest
-                {
-                    AccountId = paymentData.AccountId,
-                    ClientId = ClientId,
-                    CreditId = credit.Id,
-                    Amount = newPayment.PaymentAmount,
-                    OperationType = OperationType.Outcome.ToString(),
-                    Type = Common.Models.CreditOperationType.ByUser
-                };
+                AccountId = paymentData.AccountId,
+                ClientId = ClientId,
+                CreditId = credit.Id,
+                Amount = newPayment.PaymentAmount,
+                OperationType = OperationType.Outcome.ToString(),
+                Type = Common.Models.CreditOperationType.ByUser
+            };
 
-                var response = await bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
+            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
 
-                if (response != null)
-                {
-                    throw new CustomException(response.message, "", "", response.status);
-                }
+            if (response != null)
+            {
+                throw new CustomException(response.message, "", "", response.status);
             }
 
             credit.RemainingAmount -= newPayment.PaymentAmount;
@@ -531,10 +523,7 @@ public class CreditService : ICreditService
                     Type = Common.Models.CreditOperationType.Automatic
                 };
 
-                using (var bus = RabbitHutch.CreateBus("host=localhost"))
-                {
-                    response = await bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
-                }
+                response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
 
                 if (response != null)
                 {
@@ -652,15 +641,12 @@ public class CreditService : ICreditService
             ClientId = ClientId,
             Rating = 0
         };
-        using (var bus = RabbitHutch.CreateBus("host=localhost"))
+        var response = await _rabbit._bus.Rpc.RequestAsync<GetRatingRequest, int>(new GetRatingRequest() { ClientId = ClientId }, configure: x => x.WithQueueName("GetRating"));
+        if (response == -1)
         {
-            var response = await bus.Rpc.RequestAsync<GetRatingRequest, int>(new GetRatingRequest() { ClientId = ClientId }, configure: x => x.WithQueueName("GetRating"));
-            if(response == -1)
-            {
-                throw new CustomException("Account not found", "GetRatingAsync", "AccountId", 404);
-            }
-            rating.Rating = (int)response;
+            throw new CustomException("Account not found", "GetRatingAsync", "AccountId", 404);
         }
+        rating.Rating = (int)response;
         return rating;
     }
 }

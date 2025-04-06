@@ -1,7 +1,8 @@
 ﻿using Common.ErrorHandling;
+using Common.Rabbit;
 using Core.Data;
 using Core.Data.Models;
-using Core_Api.Data.DTOs.Requests;
+using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +11,11 @@ namespace Core.Services
     public class AccountService
     {
         private readonly AppDBContext _context;
-        private readonly IBus _bus;
-        public AccountService(AppDBContext context)
+        private readonly CoreRabbit _rabbit;
+        public AccountService(AppDBContext context, CoreRabbit rabbit)
         {
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=localhost");
+            _rabbit = rabbit;
         }
 
         public Client GetClient(Guid ClientId)
@@ -88,7 +89,7 @@ namespace Core.Services
 
         public void CloseAccount(Account Account)
         {
-            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
+            var AccountHaveCredit = _rabbit._bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
 
             if (!AccountHaveCredit)
             {

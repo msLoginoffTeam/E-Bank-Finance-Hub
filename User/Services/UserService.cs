@@ -121,5 +121,13 @@ namespace UserApi.Services
             _context.Users.Update(User);
             _context.SaveChanges();
         }
+
+        public void EditRoleUser(User User, List<Role> Roles)
+        {
+            User.Roles = Roles.Select(Role => new UserRole(User, Role)).ToList();
+
+            _context.Users.Update(User);
+            _context.SaveChanges();
+        }
     }
 }
