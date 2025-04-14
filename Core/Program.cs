@@ -70,7 +70,8 @@ builder.Services.AddSingleton<CoreRabbit>();
 builder.Services.AddHostedService<CurrencyCoursesGetter>();
 builder.Services.AddSingleton<WebSocketServerManager>();
 builder.Services.AddHostedService<FirebaseNotificator>();
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("localhost"));
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
+Console.WriteLine(Environment.GetEnvironmentVariable("REDIS_CONNECTION"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>

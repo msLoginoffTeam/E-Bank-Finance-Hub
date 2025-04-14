@@ -11,6 +11,7 @@ using CreditService_Patterns.Services.Utils;
 using UserApi.Services.Utils;
 using Common.Idempotency;
 using Common.InternalServerErrorMiddleware;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddSingleton<CreditRabbit>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>

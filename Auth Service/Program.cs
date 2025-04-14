@@ -7,6 +7,7 @@ using Common.Idempotency;
 using Common.InternalServerErrorMiddleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using UserApi.Services.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,7 @@ builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(Environ
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TokenGenerator>();
 builder.Services.AddSingleton<AuthRabbit>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>

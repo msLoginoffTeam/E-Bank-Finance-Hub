@@ -6,6 +6,7 @@ using Common.Idempotency;
 using Common.InternalServerErrorMiddleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using User_Api.Data.DTOs.Responses;
 using UserApi.Data;
 using UserApi.Services;
@@ -63,6 +64,8 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(Environment.GetEnvironmentVariable("USER_DATABASE_CONNECTION") != null ? Environment.GetEnvironmentVariable("USER_DATABASE_CONNECTION") : builder.Configuration.GetConnectionString("DataBase")));
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<UserRabbit>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
+Console.WriteLine(Environment.GetEnvironmentVariable("REDIS_CONNECTION"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
