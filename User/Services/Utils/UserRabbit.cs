@@ -57,6 +57,26 @@ namespace UserApi.Services.Utils
                     return UserInfo;
                 }
             });
+
+            _bus.Rpc.Respond<string, List<string>>(_ =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
+
+                    return UserService.GetEmployeeDeviceTokens();
+                }
+            }, x => x.WithQueueName("GetEmployeeDeviceTokens"));
+
+            _bus.Rpc.Respond<Guid, string>(ClientId =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
+
+                    return UserService.GetClientDeviceToken(ClientId);
+                }
+            }, x => x.WithQueueName("GetClientDeviceToken"));
         }
     }
 }

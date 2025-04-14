@@ -48,40 +48,6 @@ namespace UserApi.Controllers
             return Ok();
         }
 
-        ///// <summary>  
-        ///// Вход пользователя
-        ///// </summary>
-        //[HttpPost]
-        //[Route("login")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //public ActionResult<TokenResponse> loginClient(LoginUserRequest Request)
-        //{
-        //    User User = _userService.GetUserByLogin(Request.Email);
-        //    if (User.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
-        //    if (User.Password != Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Request.Password)))) { throw new ErrorException(400, "Пароль не подходит."); }
-        //    var token = _userService.LoginUser(User);
-
-        //    return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
-        //}
-
-        ///// <summary>  
-        ///// Обновление refresh токена
-        ///// </summary>
-        //[Authorize(Policy = "RefreshTokenAccess")]
-        //[HttpPost]
-        //[Route("refresh")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //public ActionResult<TokenResponse> refresh()
-        //{
-        //    var UserId = User.Claims.ToList()[0].Value;
-
-        //    User user = _userService.GetUserById(new Guid(UserId));
-        //    if (user.IsBlocked) { throw new ErrorException(403, "Пользователь заблокирован."); }
-        //    var token = _userService.Refresh(user, Request.Headers.Authorization.ToString().Substring(7));
-
-        //    return Ok(new TokenResponse(token.AccessToken, token.RefreshToken));
-        //}
-
 
         /// <summary>  
         /// Получение профиля пользователя
@@ -226,7 +192,7 @@ namespace UserApi.Controllers
         /// Получение ролей пользователя
         /// </summary>
         [Authorize]
-        [HttpPost]
+        [HttpGet]
         [Route("get/role/{UserId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult getRole(Guid? UserId)
@@ -261,15 +227,34 @@ namespace UserApi.Controllers
 
             if (role == "Employee")
             {
-                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Manager) || EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Employee)) throw new ErrorException(400, "Работник может менять роли только клиента.");
+                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager) || EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Role.Employee)) throw new ErrorException(400, "Работник может менять роли только клиента.");
             }
             else
             {
-                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Data.Models.Role.Manager)) throw new ErrorException(400, "Менеджер не может менять роли другого менеджера.");
+                if (EditRoleUser.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager)) throw new ErrorException(400, "Менеджер не может менять роли другого менеджера.");
             }
             if (Roles.Contains(Role.Manager)) throw new ErrorException(400, "Нельзя присовить роль менеджера");
 
             _userService.EditRoleUser(EditRoleUser, Roles);
+
+            return Ok();
+        }
+
+        /// <summary>  
+        /// Соглашение на отправление уведомлений
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        [Route("set/deviceToken/{UserId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult setDeviceToken(string DeviceToken)
+        {
+            var UserId = base.User.Claims.First().Value;
+
+            User User = _userService.GetUserById(new Guid(UserId));
+            User.DeviceToken = DeviceToken;
+
+            _userService.EditUser(User);
 
             return Ok();
         }

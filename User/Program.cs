@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Common;
 using Common.ErrorHandling;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using User_Api.Data.DTOs.Responses;
@@ -94,6 +96,10 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+app.UseMiddleware<HttpInstabilityMiddleware>();
+
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapControllers();
 

@@ -1,5 +1,6 @@
 ﻿using Common.ErrorHandling;
 using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
@@ -90,11 +91,12 @@ namespace Core.Controllers
                 AccountId = TargetAccountId,
                 ClientId = new Guid(ClientId),
                 Amount = Request.Amount,
-                OperationType = Request.OperationType.ToString()
+                OperationType = Request.OperationType.ToString(),
+                IdempotencyKey = Guid.NewGuid()
             };
 
-            var ErrorResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, ErrorResponse>(CashOperationRequest);
-            if (ErrorResponse != null) { throw new ErrorException(ErrorResponse); }
+            var RabbitResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, RabbitResponse>(CashOperationRequest);
+            if (RabbitResponse.status != 200) { return new ObjectResult(new ErrorResponse(RabbitResponse)) { StatusCode = RabbitResponse.status }; }
 
             return Ok();
         }
@@ -115,11 +117,12 @@ namespace Core.Controllers
                 AccountId = SenderAccountId,
                 ClientId = new Guid(ClientId),
                 Amount = Request.Amount,
-                ReceiverAccountNumber = ReceiverAccountNumber
+                ReceiverAccountNumber = ReceiverAccountNumber,
+                IdempotencyKey = Guid.NewGuid()
             };
 
-            var ErrorResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, ErrorResponse>(TransferOperationRequest);
-            if (ErrorResponse != null) { throw new ErrorException(ErrorResponse); }
+            var RabbitResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, RabbitResponse>(TransferOperationRequest);
+            if (RabbitResponse.status != 200) { return new ObjectResult(new ErrorResponse(RabbitResponse)) { StatusCode = RabbitResponse.status }; }
 
             return Ok();
         }

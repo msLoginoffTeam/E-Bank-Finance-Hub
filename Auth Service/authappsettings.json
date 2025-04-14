@@ -1,7 +1,7 @@
 {
-  "ConnectionStrings": {
-    "DataBase": "Host=localhost;Database=AuthDB;Username=postgres;Password=1234"
-  },
+    "ConnectionStrings": {
+        "DataBase": "Host=localhost;Database=AuthDB;Username=postgres;Password=admin"
+    },
   "Logging": {
     "LogLevel": {
       "Default": "Information",

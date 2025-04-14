@@ -9,6 +9,8 @@ using Quartz;
 using Common;
 using CreditService_Patterns.Services.Utils;
 using UserApi.Services.Utils;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,6 +105,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<HttpInstabilityMiddleware>();
+
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapControllers();
 

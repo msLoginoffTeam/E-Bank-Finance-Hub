@@ -1,11 +1,11 @@
 ﻿using Common.ErrorHandling;
+using Common.Idempotency;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
 using Core_Api.Data.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UserApi.Data.Models;
 
 namespace Core.Controllers
 {

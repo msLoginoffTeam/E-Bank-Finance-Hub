@@ -3,6 +3,8 @@ using Auth_Service.Services;
 using Auth_Service.Services.Utils;
 using Common;
 using Common.ErrorHandling;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using UserApi.Services.Utils;
@@ -66,6 +68,10 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseMiddleware<HttpInstabilityMiddleware>();
+
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

@@ -129,5 +129,15 @@ namespace UserApi.Services
             _context.Users.Update(User);
             _context.SaveChanges();
         }
+
+        public List<string> GetEmployeeDeviceTokens()
+        {
+            return _context.Users.Where(User => (User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Employee) || User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager)) && User.DeviceToken != null).Select(User => User.DeviceToken!).ToList();
+        }
+
+        public string GetClientDeviceToken(Guid UserId)
+        {
+            return _context.Users.FirstOrDefault(User => User.Id == UserId)?.DeviceToken;
+        }
     }
 }

@@ -3,6 +3,11 @@ using Core.Data;
 using Common.ErrorHandling;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
+using Core_Api.Services.Utils;
+using Fleck;
+using Core.Data.DTOs.Responses;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Core.Services
 {
@@ -75,6 +80,8 @@ namespace Core.Services
             _context.Accounts.Update(Operation.TargetAccount);
             _context.SaveChanges();
 
+            WebSocketServerManager.Send(Operation);
+            FirebaseNotificator.AddNotificationReceiversFromOperation(Operation);
 
             return null;
         }

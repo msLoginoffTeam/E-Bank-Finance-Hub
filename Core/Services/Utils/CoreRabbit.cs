@@ -1,12 +1,14 @@
 ﻿using Common.ErrorHandling;
 using Common.Models;
 using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core_Api.Services.Utils;
 using EasyNetQ;
 using Fleck;
+using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -16,11 +18,7 @@ namespace Core.Services.Utils
 {
     public class CoreRabbit : Common.Rabbit.RabbitMQ
     {
-        private readonly WebSocketServerManager webSocketServerManager;
-        public CoreRabbit(IServiceProvider serviceProvider, WebSocketServerManager webSocketServerManager) : base(serviceProvider)
-        {
-            this.webSocketServerManager = webSocketServerManager;
-        }
+        public CoreRabbit(IServiceProvider serviceProvider, IConnectionMultiplexer redis) : base(serviceProvider, redis) {}
 
         public override void Configure()
         {
@@ -35,77 +33,59 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
-            _bus.Rpc.Respond<RabbitOperationRequest, ErrorResponse>(Request =>
+            RpcIdempotent<RabbitOperationRequest, RabbitResponse>(Request =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var operationService = scope.ServiceProvider.GetRequiredService<OperationService>();
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    try
+                    object OperationResponse;
+
+                    Operation Operation;
+                    Account Account = accountService.GetAccount(Request.AccountId, Request.ClientId);
+
+                    if (Request is CreditOperationRequest CreditRequest)
                     {
-                        object OperationResponse;
+                        Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId, CreditRequest.Type, null);
+                        OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
+                    }
+                    else if (Request is TransferOperationRequest TransferOperationRequest)
+                    {
+                        Account ReceiverAccount = accountService.GetAccount(TransferOperationRequest.ReceiverAccountNumber);
+                        if (ReceiverAccount == Account) return new RabbitResponse(400, "Счета получателя и отправителя совпадают");
 
-                        Operation Operation;
-                        Account Account = accountService.GetAccount(Request.AccountId, Request.ClientId);
+                        Operation = new TransferOperation(Account, new OperationRequest(Request), ReceiverAccount);
+                        ((TransferOperation)Operation).ConvertedAmount = operationService.CountConvertedAmount(Account, ReceiverAccount, Operation.Amount);
+                        Console.WriteLine(((TransferOperation)Operation).ConvertedAmount);
+                        OperationResponse = new TransferOperationResponse(Operation as TransferOperation);
+                    }
+                    else
+                    {
+                        Operation = new CashOperation(new OperationRequest(Request), Account);
+                        OperationResponse = new CashOperationResponse(Operation as CashOperation);
+                    }
+                    var res = operationService.MakeOperation(Operation);
 
-                        if (Request is CreditOperationRequest CreditRequest)
+                    if (Request is CreditOperationRequest CreRequest)
+                    {
+                        if (res == null)
                         {
-                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId, CreditRequest.Type, null);
+                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, true);
                             OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
-                        }
-                        else if (Request is TransferOperationRequest TransferOperationRequest)
-                        {
-                            Account ReceiverAccount = accountService.GetAccount(TransferOperationRequest.ReceiverAccountNumber);
-                            if (ReceiverAccount == Account) return new ErrorResponse(400, "Счета получателя и отправителя совпадают");
-
-                            Operation = new TransferOperation(Account, new OperationRequest(Request), ReceiverAccount);
-                            ((TransferOperation)Operation).ConvertedAmount = operationService.CountConvertedAmount(Account, ReceiverAccount, Operation.Amount);
-                            Console.WriteLine(((TransferOperation)Operation).ConvertedAmount);
-                            OperationResponse = new TransferOperationResponse(Operation as TransferOperation);
                         }
                         else
                         {
-                            Operation = new CashOperation(new OperationRequest(Request), Account);
-                            OperationResponse = new CashOperationResponse(Operation as CashOperation);
-                        }
-                        var res = operationService.MakeOperation(Operation);
-
-                        if(Request is CreditOperationRequest CreRequest)
-                        {
-                            if(res == null) 
-                            {
-                                Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, true);
-                                OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
-                            }
-                            else
-                            {
-                                Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, false);
-                                OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
-                            }
-                        }
-
-                        var jsonMessage = System.Text.Json.JsonSerializer.Serialize(OperationResponse, new JsonSerializerOptions()
-                        {
-                            Converters = { new JsonStringEnumConverter() }
-                        });
-
-                        var Sockets = webSocketServerManager.GetBroadcast(Account.Id);
-                        foreach (var Socket in Sockets != null ? Sockets : new List<IWebSocketConnection>() )
-                        {
-                            Socket.Send(jsonMessage);
-                        }
-
-                        if(res != null) 
-                        {
-                            throw new ErrorException(403, "На счете не хватает денег для операции.");
+                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreRequest.CreditId, CreRequest.Type, false);
+                            OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
                         }
                     }
-                    catch (ErrorException ex)
+
+                    if (res != null)
                     {
-                        return new ErrorResponse(ex);
+                        throw new ErrorException(403, "На счете не хватает денег для операции.");
                     }
-                    return null;
+                    return new RabbitResponse(200, "");
                 }
             });
 
