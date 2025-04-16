@@ -1,25 +1,13 @@
 ﻿using Common.ErrorHandling;
-using Common.Rabbit.DTOs.Requests;
 using Core.Data.DTOs.Requests;
-using Core.Data.DTOs.Responses;
 using Core.Data.Models;
-using Core_Api.Services.Utils;
 using EasyNetQ;
-using Fleck;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 
 namespace Core.Services.Utils
 {
     public class CoreRabbit : Common.Rabbit.RabbitMQ
     {
-        private readonly WebSocketServerManager webSocketServerManager;
-        public CoreRabbit(IServiceProvider serviceProvider, WebSocketServerManager webSocketServerManager) : base(serviceProvider)
-        {
-            this.webSocketServerManager = webSocketServerManager;
-        }
+        public CoreRabbit(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Configure()
         {
@@ -34,8 +22,23 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
-            _bus.Rpc.Respond<RabbitOperationRequest, ErrorResponse>(Request =>
+            _bus.PubSub.Subscribe<((Guid AccountId, Guid ClientId), CreditOperationRequest Request)>("CreditOperation_Core", tuple =>
             {
+                var (Account, Request) = tuple;
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var OperationService = scope.ServiceProvider.GetRequiredService<OperationService>();
+                    var AccountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    OperationService.MakeOperation(new CreditOperation(Request, AccountService.GetAccount(Account.AccountId, Account.ClientId)));
+                }
+            });
+
+            _bus.Rpc.Respond<((Guid AccountId, Guid ClientId), CreditOperationRequest Request), ErrorResponse?>(tuple =>
+            {
+                var (Account, Request) = tuple;
+
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var operationService = scope.ServiceProvider.GetRequiredService<OperationService>();
@@ -43,47 +46,13 @@ namespace Core.Services.Utils
 
                     try
                     {
-                        object OperationResponse;
-
-                        Operation Operation;
-                        Account Account = accountService.GetAccount(Request.AccountId, Request.ClientId);
-
-                        if (Request is CreditOperationRequest CreditRequest)
-                        {
-                            Operation = new CreditOperation(new OperationRequest(Request), Account, CreditRequest.CreditId);
-                            OperationResponse = new CreditOperationResponse(Operation as CreditOperation);
-                        }
-                        else if (Request is TransferOperationRequest TransferOperationRequest)
-                        {
-                            Account ReceiverAccount = accountService.GetAccount(TransferOperationRequest.ReceiverAccountNumber);
-                            if (ReceiverAccount == Account) return new ErrorResponse(400, "Счета получателя и отправителя совпадают");
-
-                            Operation = new TransferOperation(Account, new OperationRequest(Request), ReceiverAccount);
-                            ((TransferOperation)Operation).ConvertedAmount = operationService.CountConvertedAmount(Account, ReceiverAccount, Operation.Amount);
-                            Console.WriteLine(((TransferOperation)Operation).ConvertedAmount);
-                            OperationResponse = new TransferOperationResponse(Operation as TransferOperation);
-                        }
-                        else
-                        {
-                            Operation = new CashOperation(new OperationRequest(Request), Account);
-                            OperationResponse = new CashOperationResponse(Operation as CashOperation);
-                        }
-                        operationService.MakeOperation(Operation);
-
-                        var jsonMessage = System.Text.Json.JsonSerializer.Serialize(OperationResponse, new JsonSerializerOptions()
-                        {
-                            Converters = { new JsonStringEnumConverter() }
-                        });
-
-                        var Sockets = webSocketServerManager.GetBroadcast(Account.Id);
-                        foreach (var Socket in Sockets != null ? Sockets : new List<IWebSocketConnection>() )
-                        {
-                            Socket.Send(jsonMessage);
-                        }
+                        var account = accountService.GetAccount(Account.AccountId, Account.ClientId);
+                        var operation = new CreditOperation(Request, account);
+                        operationService.MakeOperation(operation);
                     }
                     catch (ErrorException ex)
                     {
-                        return new ErrorResponse(ex);
+                        return new ErrorResponse(ex.status, ex.message);
                     }
                     return null;
                 }

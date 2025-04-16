@@ -6,8 +6,6 @@ USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
-ENV ASPNETCORE_ENVIRONMENT=Development 
-
 
 # Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build

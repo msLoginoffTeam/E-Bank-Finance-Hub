@@ -3,8 +3,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+<<<<<<<< HEAD:Core/Migrations/20250401125521_init.cs
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
+========
+>>>>>>>> d9f3d17 (AuthService):Core/Migrations/20250322095008_init.cs
 namespace Core_Api.Migrations
 {
     /// <inheritdoc />
@@ -41,6 +44,11 @@ namespace Core_Api.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+<<<<<<<< HEAD:Core/Migrations/20250401125521_init.cs
+========
+                    ClientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsClosed = table.Column<bool>(type: "boolean", nullable: false),
+>>>>>>>> d9f3d17 (AuthService):Core/Migrations/20250322095008_init.cs
                     Name = table.Column<string>(type: "text", nullable: false),
                     Number = table.Column<string>(type: "text", nullable: true),
                     Currency = table.Column<int>(type: "integer", nullable: false),

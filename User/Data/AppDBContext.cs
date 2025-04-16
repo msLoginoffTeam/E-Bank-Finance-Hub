@@ -32,20 +32,6 @@ namespace UserApi.Data
                 UserId = Manager.Id,
                 Role = Role.Manager
             });
-
-            User User = new User()
-            {
-                Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
-                Email = "user@example.com",
-                FullName = "Клиент Б",
-                IsBlocked = false
-            };
-            modelBuilder.Entity<User>().HasData(User);
-            modelBuilder.Entity<UserRole>().HasData(new
-            {
-                UserId = Manager.Id,
-                Role = Role.Client
-            });
         }
     }
 }

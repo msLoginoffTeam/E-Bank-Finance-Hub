@@ -12,7 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Core_Api.Migrations
 {
     [DbContext(typeof(AppDBContext))]
+<<<<<<<< HEAD:Core/Migrations/20250401125521_init.Designer.cs
     [Migration("20250401125521_init")]
+========
+    [Migration("20250322095008_init")]
+>>>>>>>> d9f3d17 (AuthService):Core/Migrations/20250322095008_init.Designer.cs
     partial class init
     {
         /// <inheritdoc />

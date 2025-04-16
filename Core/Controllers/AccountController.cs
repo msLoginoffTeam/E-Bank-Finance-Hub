@@ -2,10 +2,8 @@
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
-using Core_Api.Data.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UserApi.Data.Models;
 
 namespace Core.Controllers
 {
@@ -26,12 +24,12 @@ namespace Core.Controllers
         [HttpPost]
         [Route("open")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult createAccount(CreateAccountRequest CreateRequest)
+        public ActionResult createAccount(string Name)
         {
             var ClientId = User.Claims.ToList()[0].Value;
             Client Client = _accountService.GetClient(new Guid(ClientId));
 
-            Account Account = new Account(CreateRequest, Client);
+            Account Account = new Account(Name, Client);
             _accountService.CreateAccount(Account);
 
             return Ok();
