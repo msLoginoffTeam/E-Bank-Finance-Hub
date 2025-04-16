@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AUTH_API } from './endpoints';
+import {AUTH_TOKEN_API} from './endpoints';
 
 const axiosInstance = axios.create({
     baseURL: '/',
@@ -28,7 +28,7 @@ axiosInstance.interceptors.response.use(
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url.includes('/refresh')
+            !originalRequest.url.includes('/Refresh')
         ) {
             originalRequest._retry = true;
 
@@ -37,7 +37,7 @@ axiosInstance.interceptors.response.use(
                 if (!refreshToken) throw new Error('No refresh token');
 
                 const refreshResponse = await axios.post(
-                    `${AUTH_API}/users/refresh`,
+                    `${AUTH_TOKEN_API}/Refresh?IsClient=true`,
                     {},
                     {
                         headers: {
@@ -45,6 +45,7 @@ axiosInstance.interceptors.response.use(
                         },
                     }
                 );
+                console.log(refreshResponse?.data);
 
                 const newAccessToken = refreshResponse.data.accessToken;
                 const newRefreshToken = refreshResponse.data.refreshToken;
@@ -56,9 +57,10 @@ axiosInstance.interceptors.response.use(
 
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
+                console.log(refreshError);
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
+                //window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }

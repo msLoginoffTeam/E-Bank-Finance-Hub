@@ -7,8 +7,8 @@ import {clearAuthError, login} from "../store/AuthStore";
 
 export const LoginPage = () => {
     const dispatch = useAppDispatch();
-    const navigate = useNavigate();
-    const token = useAppSelector((state) => state.auth.token);
+    //const navigate = useNavigate();
+    //const token = useAppSelector((state) => state.auth.token);
     const backendError = useAppSelector((state) => state.auth.error);
     const [loading, setLoading] = useState(false);
 
@@ -32,11 +32,19 @@ export const LoginPage = () => {
         setLoading(false);
     };
 
-    useEffect(() => {
-        if (token) {
-            navigate('/');
-        }
-    }, [token]);
+    let url = new URL(window.location.href);
+    let params = new URLSearchParams(url.search);
+    let accessToken = params.get('accessToken');
+    let refreshToken = params.get('refreshToken');
+
+    if (!accessToken || !refreshToken) {
+        //window.location.href = 'http://localhost:8083?IsClient=true&returnUrl=http://localhost:5173/login';
+    }
+    else {
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        window.location.href = '/'
+    }
 
     return (
         <Center style={{ height: '100vh' }}>

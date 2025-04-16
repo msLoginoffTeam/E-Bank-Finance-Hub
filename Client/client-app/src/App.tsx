@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core';
+import {MantineProvider} from '@mantine/core';
 import { AppRouter } from './router';
 import '@mantine/core/styles.css';
 
