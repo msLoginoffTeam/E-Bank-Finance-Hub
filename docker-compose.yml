@@ -1,7 +1,7 @@
 version: '3.8'  
 
 services:
-  auth:    
+  auth:
     build:  
       context: . 
       dockerfile: AuthDockerfile
@@ -15,21 +15,22 @@ services:
     depends_on:  
       - db
       - rabbitmq 
-  
-  core:    
-    build:  
-      context: . 
+
+  core:
+    build:
+      context: .
       dockerfile: CoreDockerfile
     ports:  
       - "8080:8080"
+      - "5009:5009"
     environment:
       CORE_DATABASE_CONNECTION: ${CORE_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
     networks:  
       - network
-    depends_on:  
+    depends_on:
       - db
-      - rabbitmq 
+      - rabbitmq
 
   credit:    
     build:  
@@ -40,7 +41,7 @@ services:
     environment:
       CREDIT_DATABASE_CONNECTION: ${CREDIT_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
-    networks:  
+    networks:
       - network
     depends_on:  
       - db
@@ -55,21 +56,21 @@ services:
     environment:
       USER_DATABASE_CONNECTION: ${USER_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
-    networks:  
+    networks:
       - network
     depends_on:  
       - db
       - rabbitmq 
 
-  db:  
+  db:
     image: postgres:latest
     container_name: db
     ports:  
-      - "5432:5432" 
+      - "5432:5432"
     environment:  
-      POSTGRES_DB: ${POSTGRES_DB} 
+      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}    
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:  
       - dbData:/var/lib/postgresql/data
     networks:  

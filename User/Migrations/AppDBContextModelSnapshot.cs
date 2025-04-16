@@ -49,6 +49,13 @@ namespace User_Api.Migrations
                             Email = "manager@example.com",
                             FullName = "Менеджер А",
                             IsBlocked = false
+                        },
+                        new
+                        {
+                            Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                            Email = "user@example.com",
+                            FullName = "Клиент Б",
+                            IsBlocked = false
                         });
                 });
 
@@ -69,6 +76,11 @@ namespace User_Api.Migrations
                         {
                             UserId = new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
                             Role = 2
+                        },
+                        new
+                        {
+                            UserId = new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                            Role = 0
                         });
                 });
 

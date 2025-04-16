@@ -3,6 +3,9 @@ using Common.ErrorHandling;
 using Core.Data;
 using Core.Services;
 using Core.Services.Utils;
+using Core_Api.Services.Utils;
+using Fleck;
+using Microsoft.AspNetCore.WebSockets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -57,7 +60,9 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<OperationService>();
-builder.Services.AddSingleton<Core.Services.Utils.CoreRabbit>();
+builder.Services.AddSingleton<CoreRabbit>();
+builder.Services.AddHostedService<CurrencyCoursesGetter>();
+builder.Services.AddSingleton<WebSocketServerManager>();
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
@@ -76,8 +81,11 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.Migrate();
 
+    var webSocket = app.Services.GetRequiredService<WebSocketServerManager>();
+    webSocket.Start();
+
     var bus = app.Services.GetRequiredService<CoreRabbit>();
-    bus = new CoreRabbit(app.Services);
+    bus = new CoreRabbit(app.Services, webSocket);
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

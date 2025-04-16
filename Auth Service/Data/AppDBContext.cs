@@ -23,6 +23,12 @@ namespace Auth_Service.Models
                 Id = new Guid("4e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
                 Password = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("admin123"))),
             });
+
+            modelBuilder.Entity<ClientAuth>().HasData(new ClientAuth()
+            {
+                Id = new Guid("6e9e5d77-d218-49aa-80a9-3a1f0dba62db"),
+                Password = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("string123"))),
+            });
         }
     }
 }

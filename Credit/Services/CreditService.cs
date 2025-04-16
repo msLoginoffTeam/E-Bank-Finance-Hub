@@ -1,4 +1,5 @@
 ﻿using Common.ErrorHandling;
+using Common.Rabbit.DTOs.Requests;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
@@ -390,7 +391,7 @@ public class CreditService : ICreditService
                 AccountId = NewCreditData.AccountId,
                 Amount = NewCreditData.Amount,
                 ClosingDate = NewCreditData.ClosingDate,
-                RemainingAmount = NewCreditData.Amount * (1 + (creditPlanCheck.PlanPercent/100)),
+                RemainingAmount = (int)(NewCreditData.Amount * (1 + (creditPlanCheck.PlanPercent/100))),
                 Status = ClientCreditStatusEnum.Open
             };
 
@@ -402,8 +403,8 @@ public class CreditService : ICreditService
                 var request = new CreditOperationRequest
                 {
                     CreditId = newCredit.Id,
-                    AmountInRubles = newCredit.Amount,
-                    OperationType = OperationType.Income
+                    Amount = newCredit.Amount,
+                    OperationType = OperationType.Income.ToString()
                 };
 
                 await bus.PubSub.PublishAsync<((Guid, Guid), CreditOperationRequest)>(((newCredit.AccountId, newCredit.ClientId), request));
@@ -445,8 +446,8 @@ public class CreditService : ICreditService
                 var request = new CreditOperationRequest
                 {
                     CreditId = credit.Id,
-                    AmountInRubles = newPayment.PaymentAmount,
-                    OperationType = OperationType.Outcome
+                    Amount = newPayment.PaymentAmount,
+                    OperationType = OperationType.Outcome.ToString()
                 };
 
                 var response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((paymentData.AccountId, ClientId), request));
@@ -506,19 +507,19 @@ public class CreditService : ICreditService
                 }
                 ErrorResponse? response;
 
-                var PaymentAmount = credit.Status == ClientCreditStatusEnum.Expired
+                int PaymentAmount = (int)(credit.Status == ClientCreditStatusEnum.Expired
                     ?
                         MathF.Round(credit.RemainingAmount / 10)
                     :
-                        MathF.Round(credit.RemainingAmount / (int)Math.Ceiling((credit.ClosingDate - DateTime.UtcNow).TotalSeconds / 20.0), 2);
+                        MathF.Round(credit.RemainingAmount / (int)Math.Ceiling((credit.ClosingDate - DateTime.UtcNow).TotalSeconds / 20.0), 2));
 
                 PaymentAmount = PaymentAmount > credit.RemainingAmount ? credit.RemainingAmount : PaymentAmount;
 
                 var request = new CreditOperationRequest
                 {
                     CreditId = credit.Id,
-                    AmountInRubles = PaymentAmount,
-                    OperationType = OperationType.Outcome
+                    Amount = PaymentAmount,
+                    OperationType = OperationType.Outcome.ToString()
                 };
 
                 using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
@@ -538,7 +539,7 @@ public class CreditService : ICreditService
                     var newPayment = new CreditPaymentDbModel
                     {
                         ClientCreditId = credit.Id,
-                        PaymentAmount = request.AmountInRubles,
+                        PaymentAmount = request.Amount,
                         PaymentDate = DateTime.UtcNow,
                         Type = PaymentTypeEnum.Automatic,
                         AccountId = credit.AccountId
@@ -577,11 +578,11 @@ public class CreditService : ICreditService
             {
                 if (credit.Status == ClientCreditStatusEnum.Open)
                 {
-                    credit.RemainingAmount *= 1 + (credit.CreditPlan.PlanPercent / 100);
+                    credit.RemainingAmount = (int)(credit.RemainingAmount * (1 + (credit.CreditPlan.PlanPercent / 100)));
                 }
                 else
                 {
-                    credit.RemainingAmount *= 1 + ((credit.CreditPlan.PlanPercent / 100) * 2);
+                    credit.RemainingAmount = (int)(credit.RemainingAmount * (1 + ((credit.CreditPlan.PlanPercent / 100) * 2)));
                 }
 
                 _creditContext.Credit.Update(credit);
