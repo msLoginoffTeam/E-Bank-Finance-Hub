@@ -71,10 +71,6 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.UseMiddleware<HttpInstabilityMiddleware>();
-
-app.UseMiddleware<IdempotencyMiddleware>();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{IsClient?}/{returnUrl?}");

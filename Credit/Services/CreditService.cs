@@ -1,10 +1,7 @@
-﻿using Common.ErrorHandling;
-using Common.Models;
+﻿using Common.Models;
 using Common.Rabbit.DTOs.Requests;
-using Core.Data.DTOs.Requests;
-using Core.Data.DTOs.Responses;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data.Models;
-using Core.Services.Utils;
 using Credit_Api.Models.innerModels;
 using Credit_Api.Models.responseModels;
 using CreditService_Patterns.Contexts;
@@ -381,8 +378,8 @@ public class CreditService : ICreditService
             }
 
 
-            var AccountExists = await _rabbit._bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
-            if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
+            RabbitResponse RabbitResponse = await _rabbit._bus.Rpc.RequestAsync<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId));
+            if (RabbitResponse.status != 200) throw new CustomException(RabbitResponse);
 
             var newCredit = new ClientCreditDbModel
             {
@@ -404,9 +401,10 @@ public class CreditService : ICreditService
                 ClientId = newCredit.ClientId,
                 CreditId = newCredit.Id,
                 Amount = newCredit.Amount,
-                OperationType = OperationType.Income.ToString()
+                OperationType = OperationType.Income.ToString(),
+                IdempotencyKey = Guid.NewGuid()
             };
-            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
+            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
 
             return newCredit.Id;
         }
@@ -446,10 +444,11 @@ public class CreditService : ICreditService
                 CreditId = credit.Id,
                 Amount = newPayment.PaymentAmount,
                 OperationType = OperationType.Outcome.ToString(),
-                Type = Common.Models.CreditOperationType.ByUser
+                Type = Common.Models.CreditOperationType.ByUser,
+                IdempotencyKey = Guid.NewGuid()
             };
 
-            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
+            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
 
             if (response != null)
             {
@@ -503,7 +502,7 @@ public class CreditService : ICreditService
                 {
                     credit.Status = ClientCreditStatusEnum.Expired;
                 }
-                ErrorResponse? response;
+                RabbitResponse? response;
 
                 int PaymentAmount = (int)(credit.Status == ClientCreditStatusEnum.Expired
                     ?
@@ -520,12 +519,13 @@ public class CreditService : ICreditService
                     CreditId = credit.Id,
                     Amount = PaymentAmount,
                     OperationType = OperationType.Outcome.ToString(),
-                    Type = Common.Models.CreditOperationType.Automatic
+                    Type = Common.Models.CreditOperationType.Automatic,
+                    IdempotencyKey = Guid.NewGuid()
                 };
 
-                response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, ErrorResponse>(request);
+                response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
 
-                if (response != null)
+                if (response.status != 200)
                 {
                     credit.Status = credit.Status == ClientCreditStatusEnum.Expired ? ClientCreditStatusEnum.Expired : ClientCreditStatusEnum.DoublePercentage;
                     _creditContext.Credit.Update(credit);
@@ -641,12 +641,12 @@ public class CreditService : ICreditService
             ClientId = ClientId,
             Rating = 0
         };
-        var response = await _rabbit._bus.Rpc.RequestAsync<GetRatingRequest, int>(new GetRatingRequest() { ClientId = ClientId }, configure: x => x.WithQueueName("GetRating"));
-        if (response == -1)
+        var response = await _rabbit._bus.Rpc.RequestAsync<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId }, configure: x => x.WithQueueName("GetRating"));
+        if (response.status != 200)
         {
-            throw new CustomException("Account not found", "GetRatingAsync", "AccountId", 404);
+            throw new CustomException(response);
         }
-        rating.Rating = (int)response;
+        rating.Rating = response.;
         return rating;
     }
 }

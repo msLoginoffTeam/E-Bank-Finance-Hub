@@ -33,7 +33,7 @@ namespace Core.Services.Utils
 
             }, conf => conf.WithTopic("CreatedClientId"));
 
-            RpcIdempotent<RabbitOperationRequest, RabbitResponse>(Request =>
+            RpcRespond(IdempotencyWrapper<RabbitOperationRequest, RabbitResponse>(Request =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -87,32 +87,32 @@ namespace Core.Services.Utils
                     }
                     return new RabbitResponse(200, "");
                 }
+            }));
+
+            RpcRespond<AccountExistRequest, RabbitResponse>(Request =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
+
+                    var account = accountService.GetAccount(Request.AccountId, Request.ClientId);
+                    if (account == null) { return new RabbitResponse(404, "Счет не найден"); }
+                    else if (account.IsClosed == true) { return new RabbitResponse(403, "Счет закрыт"); }
+                    else return new RabbitResponse(200, "");
+                }
             });
 
-            _bus.Rpc.Respond<(Guid AccountId, Guid ClientId), bool>(tuple =>
+
+            _bus.Rpc.Respond<GetRatingRequest, GetRatingResponse>(Request =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-                    var account = accountService.GetAccount(tuple.AccountId, tuple.ClientId);
-                    if (account == null || account.IsClosed == true) { return false; }
-                    else return true;
+                    var client = accountService.GetClient(Request.ClientId);
+                    return new GetRatingResponse((int)client.Rating);
                 }
-            }, configure: x => x.WithQueueName("AccountExistCheck"));
-
-
-            _bus.Rpc.Respond<GetRatingRequest, int>(ClientId =>
-            {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
-
-                    var client = accountService.GetClient(ClientId.ClientId);
-                    if (client == null) { return -1; }
-                    else return (int)client.Rating;
-                }
-            }, configure: x => x.WithQueueName("GetRating"));
+            });
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common.Rabbit.DTOs.Requests;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,5 +10,12 @@ namespace Common.Models
     public class GetRatingRequest
     {
         public Guid ClientId { get; set; }
+
+        public GetRatingRequest() {}
+
+        public GetRatingRequest(Guid ClientId)
+        {
+            this.ClientId = ClientId;
+        }
     }
 }

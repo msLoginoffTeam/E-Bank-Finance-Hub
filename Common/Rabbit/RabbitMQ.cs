@@ -35,123 +35,174 @@ namespace Common.Rabbit
             Configure();
         }
 
-        protected TResponse ExecuteWithIdempotency<TRequest, TResponse>(Guid IdempotencyKey, TRequest request, Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
+        public Func<TRequest, TResponse> InstabilityWrapper<TRequest, TResponse>(Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
         {
-            var db = _redis.GetDatabase();
-            var RequestResult = db.StringGet(IdempotencyKey.ToString());
-
-            if (!RequestResult.IsNull)
+            return (Request) =>
             {
-                var Response = JsonSerializer.Deserialize<RabbitRequestResult>(RequestResult);
-
-                if (Response.RequestStatus == RequestStatus.Pending)
+                RabbitResponse Response;
+                if (DateTime.UtcNow.Minute % 2 != 0)
                 {
-                    return new RabbitResponse(500, "Заявка еще в обработке") as TResponse;
+                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.5)
+                    {
+                        Response = Action(Request);
+                    }
+                    else
+                    {
+                        Response = new RabbitResponse(500, "Что-то пошло не так");
+                    }
                 }
                 else
                 {
-                    return JsonSerializer.Deserialize<TResponse>(Response.Response);
-                }
-            }
-            else
-            {
-                db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult()));
-
-                RabbitResponse Response;
-                try
-                {
-                    Response = Action(request);
-                }
-                catch (ErrorException ex)
-                {
-                    return new RabbitResponse(ex) as TResponse;
+                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.9)
+                    {
+                        Response = Action(Request);
+                    }
+                    else
+                    {
+                        Response = new RabbitResponse(500, "Что-то пошло не так");
+                    }
                 }
 
-                if (Response.status != 500) db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult(JsonSerializer.Serialize(Response))));
-                else db.StringGetDelete(IdempotencyKey.ToString());
+                if (Response.status != 500)
+                {
+                    SuccessRequestsCount++;
+                }
+                TotalRequestsCount++;
 
                 return Response as TResponse;
-            }
+            };
         }
 
-        protected void RpcIdempotent<TRequest, TResponse>(Func<TRequest, TResponse> handler) where TRequest : RabbitRequest where TResponse : RabbitResponse
+        public Func<TRequest, TResponse> IdempotencyWrapper<TRequest, TResponse>(Func<TRequest, TResponse> Action) where TRequest : RabbitRequest where TResponse : RabbitResponse
         {
-            _bus.Rpc.Respond<TRequest, TResponse>(Request =>
+            return (Request) =>
             {
                 Guid IdempotencyKey = Request.IdempotencyKey;
                 if (IdempotencyKey == null) throw new ErrorException(400, "Для таких операций необходим ключ идемпотентности");
 
-                RabbitResponse Response;
-                if (DateTime.UtcNow.Minute % 2 != 0)
+                var db = _redis.GetDatabase();
+                var RequestResult = db.StringGet(IdempotencyKey.ToString());
+
+                if (!RequestResult.IsNull)
                 {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.5)
+                    var Response = JsonSerializer.Deserialize<RabbitRequestResult>(RequestResult);
+
+                    if (Response.RequestStatus == RequestStatus.Pending)
                     {
-                        Response = ExecuteWithIdempotency(IdempotencyKey, Request, handler);
+                        return new RabbitResponse(500, "Заявка еще в обработке") as TResponse;
                     }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
+                    else return JsonSerializer.Deserialize<TResponse>(Response.Response);
                 }
                 else
                 {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.9)
-                    {
-                        Response = ExecuteWithIdempotency(IdempotencyKey, Request, handler);
-                    }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
-                }
+                    db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult()));
 
-                if (Response.status != 500)
-                {
-                    SuccessRequestsCount++;
-                }
-                TotalRequestsCount++;
+                    RabbitResponse Response;
+                    try
+                    {
+                        Response = Action(Request);
+                    }
+                    catch (ErrorException ex)
+                    {
+                        return new RabbitResponse(ex) as TResponse;
+                    }
 
-                return Response as TResponse;
-            });
+                    if (Response.status != 500) db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult(JsonSerializer.Serialize(Response))));
+                    else db.StringGetDelete(IdempotencyKey.ToString());
+
+                    return Response as TResponse;
+                }
+            };
         }
 
-        protected void Rpc<TRequest, TResponse>(Func<TRequest, TResponse> handler) where TResponse : RabbitResponse
+        protected void RpcRespond<TRequest, TResponse>(Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
         {
             _bus.Rpc.Respond<TRequest, TResponse>(Request =>
             {
-                RabbitResponse Response;
-                if (DateTime.UtcNow.Minute % 2 != 0)
-                {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.5)
-                    {
-                        Response = handler(Request);
-                    }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
-                }
-                else
-                {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.9)
-                    {
-                        Response = handler(Request);
-                    }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
-                }
-
-                if (Response.status != 500)
-                {
-                    SuccessRequestsCount++;
-                }
-                TotalRequestsCount++;
-
-                return Response as TResponse;
+                Func<TRequest, TResponse> RespondFunction = InstabilityWrapper(Action);
+  
+                return RespondFunction(Request);
             });
         }
+
+
+        //protected TResponse ExecuteWithIdempotency<TRequest, TResponse>(Guid IdempotencyKey, TRequest Request, Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
+        //{
+        //    var db = _redis.GetDatabase();
+        //    var RequestResult = db.StringGet(IdempotencyKey.ToString());
+
+        //    if (!RequestResult.IsNull)
+        //    {
+        //        var Response = JsonSerializer.Deserialize<RabbitRequestResult>(RequestResult);
+
+        //        if (Response.RequestStatus == RequestStatus.Pending)
+        //        {
+        //            return new RabbitResponse(500, "Заявка еще в обработке") as TResponse;
+        //        }
+        //        else
+        //        {
+        //            return JsonSerializer.Deserialize<TResponse>(Response.Response);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult()));
+
+        //        RabbitResponse Response;
+        //        try
+        //        {
+        //            Response = Action(Request);
+        //        }
+        //        catch (ErrorException ex)
+        //        {
+        //            return new RabbitResponse(ex) as TResponse;
+        //        }
+
+        //        if (Response.status != 500) db.StringSet(IdempotencyKey.ToString(), JsonSerializer.Serialize(new RabbitRequestResult(JsonSerializer.Serialize(Response))));
+        //        else db.StringGetDelete(IdempotencyKey.ToString());
+
+        //        return Response as TResponse;
+        //    }
+        //}
+
+
+        //protected void InstableRpc<TRequest, TResponse>(Func<TRequest, TResponse> handler) where TResponse : RabbitResponse
+        //{
+        //    _bus.Rpc.Respond<TRequest, TResponse>(Request =>
+        //    {
+        //        RabbitResponse Response;
+        //        if (DateTime.UtcNow.Minute % 2 != 0)
+        //        {
+        //            if ((double)SuccessRequestsCount / TotalRequestsCount < 0.5)
+        //            {
+        //                Response = handler(Request);
+        //            }
+        //            else
+        //            {
+        //                Response = new RabbitResponse(500, "Что-то пошло не так");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            if ((double)SuccessRequestsCount / TotalRequestsCount < 0.9)
+        //            {
+        //                Response = handler(Request);
+        //            }
+        //            else
+        //            {
+        //                Response = new RabbitResponse(500, "Что-то пошло не так");
+        //            }
+        //        }
+
+        //        if (Response.status != 500)
+        //        {
+        //            SuccessRequestsCount++;
+        //        }
+        //        TotalRequestsCount++;
+
+        //        return Response as TResponse;
+        //    });
+        //}
 
         public abstract void Configure();
     }
