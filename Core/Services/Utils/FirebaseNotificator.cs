@@ -1,4 +1,5 @@
-﻿using Core.Data.Models;
+﻿using Common.Rabbit.DTOs.Responses;
+using Core.Data.Models;
 using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.IdentityModel.Tokens;
@@ -87,16 +88,16 @@ namespace Core_Api.Services.Utils
             {
                 foreach (var ClientNotification in _clientNotifications)
                 {
-                    Task<string> ClientDeviceToken = _rabbit._bus.Rpc.RequestAsync<Guid, string>(ClientNotification.ClientId, x => x.WithQueueName("GetClientDeviceToken"));
-                    Send(new FirebaseNotification(await ClientDeviceToken, ClientNotification.Notification));
+                    Task<ClientDeviceTokenResponse> ClientDeviceToken = _rabbit._bus.Rpc.RequestAsync<Guid, ClientDeviceTokenResponse>(ClientNotification.ClientId);
+                    Send(new FirebaseNotification((await ClientDeviceToken).DeviceToken, ClientNotification.Notification));
                 }
             }
             if (!_employeeNotifications.IsNullOrEmpty())
             {
-                Task<List<string>> EmployeeDeviceTokens = _rabbit._bus.Rpc.RequestAsync<string, List<string>>("", x => x.WithQueueName("GetEmployeeDeviceTokens"));
+                Task<EmployeeDeviceTokensResponse> EmployeeDeviceTokens = _rabbit._bus.Rpc.RequestAsync<string, EmployeeDeviceTokensResponse>("");
                 foreach (var EmployeeNotification in _employeeNotifications)
                 {
-                    foreach (var EmployeeDeviceId in await EmployeeDeviceTokens)
+                    foreach (var EmployeeDeviceId in (await EmployeeDeviceTokens).DeviceTokens)
                     {
                         Send(new FirebaseNotification(EmployeeDeviceId, EmployeeNotification));
                     }

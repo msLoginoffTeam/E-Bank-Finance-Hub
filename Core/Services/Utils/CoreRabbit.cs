@@ -5,13 +5,8 @@ using Common.Rabbit.DTOs.Responses;
 using Core.Data.DTOs.Requests;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
-using Core_Api.Services.Utils;
 using EasyNetQ;
-using Fleck;
 using StackExchange.Redis;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 
 namespace Core.Services.Utils
@@ -103,7 +98,7 @@ namespace Core.Services.Utils
             });
 
 
-            _bus.Rpc.Respond<GetRatingRequest, GetRatingResponse>(Request =>
+            RpcRespond<GetRatingRequest, GetRatingResponse>(Request =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {

@@ -1,4 +1,6 @@
-﻿using CreditService_Patterns.IServices;
+﻿using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
+using CreditService_Patterns.IServices;
 using EasyNetQ;
 
 namespace CreditService_Patterns.Services.Utils
@@ -9,15 +11,20 @@ namespace CreditService_Patterns.Services.Utils
 
         public override void Configure()
         {
-            _bus.Rpc.Respond<Guid, bool>(AccountId =>
+            RpcRespond<Guid, CreditCheckResponse>(AccountId =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var CreditService = scope.ServiceProvider.GetRequiredService<ICreditService>();
 
-                    return CreditService.CheckIfHaveActiveCreditAsync(AccountId);
+                    if (CreditService.CheckIfHaveActiveCreditAsync(AccountId)) return new CreditCheckResponse() { status = 404, message = "На счет не привязан кредит" };
+                    else return new CreditCheckResponse()
+                    {
+                        status = 200, 
+                        message = ""
+                    };
                 }
-            }, configure: x => x.WithQueueName("AccountCreditCheck"));
+            });
         }
     }
 }

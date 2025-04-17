@@ -4,10 +4,8 @@ using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
 using Fleck;
-using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Net.Sockets;
 
 namespace Core_Api.Services.Utils
 {

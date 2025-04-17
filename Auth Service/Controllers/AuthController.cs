@@ -44,9 +44,9 @@ namespace Auth_Service.Controllers
         {
 
             UserInfoResponse UserInfo = _rabbit._bus.Rpc.Request<string, UserInfoResponse>(LoginRequest.Email);
-            if (UserInfo.error != null)
+            if (UserInfo.status != 200)
             {
-                throw new ErrorException(400, UserInfo.error);
+                throw new ErrorException(UserInfo);
             }
 
             UserAuth UserAuth;

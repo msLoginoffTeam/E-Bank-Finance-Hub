@@ -12,7 +12,11 @@ namespace Common.Rabbit.DTOs.Responses
         public int status { get; set; }
         public string message { get; set; }
 
-        public RabbitResponse() { }
+        public RabbitResponse()
+        {
+            status = 200;
+            message = "";
+        }
 
         public RabbitResponse(int status, string message)
         {

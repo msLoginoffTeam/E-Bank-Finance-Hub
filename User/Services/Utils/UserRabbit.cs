@@ -1,5 +1,6 @@
 ﻿using Common.Data.DTOs;
 using Common.ErrorHandling;
+using Common.Rabbit.DTOs.Responses;
 using EasyNetQ;
 using UserApi.Data.Models;
 
@@ -11,7 +12,7 @@ namespace UserApi.Services.Utils
 
         public override void Configure()
         {
-            _bus.Rpc.Respond<Guid, UserInfoResponse>(UserId =>
+            RpcRespond<Guid, UserInfoResponse>(UserId =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -28,7 +29,7 @@ namespace UserApi.Services.Utils
                 }
             });
 
-            _bus.Rpc.Respond<string, UserInfoResponse>(Email =>
+            RpcRespond<string, UserInfoResponse>(Email =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -50,7 +51,8 @@ namespace UserApi.Services.Utils
                     {
                         UserInfo = new UserInfoResponse()
                         {
-                            error = ex.message,
+                            status = ex.status,
+                            message = ex.message,
                         };
                     }
 
@@ -58,25 +60,25 @@ namespace UserApi.Services.Utils
                 }
             });
 
-            _bus.Rpc.Respond<string, List<string>>(_ =>
+            RpcRespond<string, EmployeeDeviceTokensResponse>(_ =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
 
-                    return UserService.GetEmployeeDeviceTokens();
+                    return new EmployeeDeviceTokensResponse(UserService.GetEmployeeDeviceTokens());
                 }
-            }, x => x.WithQueueName("GetEmployeeDeviceTokens"));
+            });
 
-            _bus.Rpc.Respond<Guid, string>(ClientId =>
+            RpcRespond<Guid, ClientDeviceTokenResponse>(ClientId =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
 
-                    return UserService.GetClientDeviceToken(ClientId);
+                    return new ClientDeviceTokenResponse(UserService.GetClientDeviceToken(ClientId));
                 }
-            }, x => x.WithQueueName("GetClientDeviceToken"));
+            });
         }
     }
 }

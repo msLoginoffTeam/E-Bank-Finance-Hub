@@ -104,13 +104,13 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowAllOrigins");
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
-
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseMiddleware<HttpInstabilityMiddleware>();
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
+if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true") app.UseMiddleware<HttpInstabilityMiddleware>();
 
 app.UseMiddleware<IdempotencyMiddleware>();
 

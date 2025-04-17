@@ -119,7 +119,15 @@ namespace Common.Rabbit
         {
             _bus.Rpc.Respond<TRequest, TResponse>(Request =>
             {
-                Func<TRequest, TResponse> RespondFunction = InstabilityWrapper(Action);
+                Func<TRequest, TResponse> RespondFunction;
+                if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true")
+                {
+                    RespondFunction = InstabilityWrapper(Action);
+                }
+                else
+                {
+                    RespondFunction = Action;
+                }
   
                 return RespondFunction(Request);
             });

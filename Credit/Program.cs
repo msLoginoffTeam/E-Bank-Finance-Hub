@@ -108,7 +108,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseMiddleware<HttpInstabilityMiddleware>();
+if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true") app.UseMiddleware<HttpInstabilityMiddleware>();
 
 app.UseMiddleware<IdempotencyMiddleware>();
 
