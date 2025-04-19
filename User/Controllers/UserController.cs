@@ -193,7 +193,7 @@ namespace UserApi.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        [Route("get/role/{UserId}")]
+        [Route("get/role")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult getRole(Guid? UserId)
         {
@@ -245,7 +245,7 @@ namespace UserApi.Controllers
         /// </summary>
         [Authorize]
         [HttpPost]
-        [Route("set/deviceToken/{UserId}")]
+        [Route("set/deviceToken")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult setDeviceToken(string DeviceToken)
         {

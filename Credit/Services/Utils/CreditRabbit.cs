@@ -24,7 +24,7 @@ namespace CreditService_Patterns.Services.Utils
                         message = ""
                     };
                 }
-            });
+            }, QueueName: "CreditCheck");
         }
     }
 }

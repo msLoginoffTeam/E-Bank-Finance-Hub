@@ -378,7 +378,7 @@ public class CreditService : ICreditService
             }
 
 
-            RabbitResponse RabbitResponse = await _rabbit._bus.Rpc.RequestAsync<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId));
+            RabbitResponse RabbitResponse = _rabbit.RpcRequest<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId), QueueName: "AccountExistCheck");
             if (RabbitResponse.status != 200) throw new CustomException(RabbitResponse);
 
             var newCredit = new ClientCreditDbModel
@@ -404,7 +404,7 @@ public class CreditService : ICreditService
                 OperationType = OperationType.Income.ToString(),
                 IdempotencyKey = Guid.NewGuid()
             };
-            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
+            var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
             return newCredit.Id;
         }
@@ -448,7 +448,7 @@ public class CreditService : ICreditService
                 IdempotencyKey = Guid.NewGuid()
             };
 
-            var response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
+            var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
             if (response != null)
             {
@@ -523,7 +523,7 @@ public class CreditService : ICreditService
                     IdempotencyKey = Guid.NewGuid()
                 };
 
-                response = await _rabbit._bus.Rpc.RequestAsync<RabbitOperationRequest, RabbitResponse>(request);
+                response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
                 if (response.status != 200)
                 {
@@ -641,12 +641,12 @@ public class CreditService : ICreditService
             ClientId = ClientId,
             Rating = 0
         };
-        var response = await _rabbit._bus.Rpc.RequestAsync<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId }, configure: x => x.WithQueueName("GetRating"));
+        var response = _rabbit.RpcRequest<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId }, QueueName: "GetRating");
         if (response.status != 200)
         {
             throw new CustomException(response);
         }
-        rating.Rating = response.;
+        rating.Rating = response.Rating;
         return rating;
     }
 }

@@ -43,7 +43,7 @@ namespace Auth_Service.Controllers
         public ActionResult Login(LoginUserRequest LoginRequest, bool IsClient, string returnUrl)
         {
 
-            UserInfoResponse UserInfo = _rabbit._bus.Rpc.Request<string, UserInfoResponse>(LoginRequest.Email);
+            UserInfoResponse UserInfo = _rabbit.RpcRequest<string, UserInfoResponse>(LoginRequest.Email, QueueName: "UserInfoByEmail");
             if (UserInfo.status != 200)
             {
                 throw new ErrorException(UserInfo);
@@ -75,7 +75,7 @@ namespace Auth_Service.Controllers
         public ActionResult<TokenResponse> Refresh(bool IsClient)
         {
             var UserId = base.User.Claims.ToList().First().Value;
-            UserInfoResponse UserInfo = _rabbit._bus.Rpc.Request<Guid, UserInfoResponse>(new Guid(UserId));
+            UserInfoResponse UserInfo = _rabbit.RpcRequest<Guid, UserInfoResponse>(new Guid(UserId), QueueName: "UserInfoById");
 
             UserAuth UserAuth;
             string role;

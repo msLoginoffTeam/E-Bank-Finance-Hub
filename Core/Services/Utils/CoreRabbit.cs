@@ -82,7 +82,7 @@ namespace Core.Services.Utils
                     }
                     return new RabbitResponse(200, "");
                 }
-            }));
+            }), QueueName: "Operations");
 
             RpcRespond<AccountExistRequest, RabbitResponse>(Request =>
             {
@@ -95,7 +95,7 @@ namespace Core.Services.Utils
                     else if (account.IsClosed == true) { return new RabbitResponse(403, "Счет закрыт"); }
                     else return new RabbitResponse(200, "");
                 }
-            });
+            }, QueueName: "AccountExistCheck");
 
 
             RpcRespond<GetRatingRequest, GetRatingResponse>(Request =>
@@ -107,7 +107,7 @@ namespace Core.Services.Utils
                     var client = accountService.GetClient(Request.ClientId);
                     return new GetRatingResponse((int)client.Rating);
                 }
-            });
+            }, QueueName: "GetRating");
         }
     }
 }

@@ -3,9 +3,7 @@ using Common.Idempotency;
 using Common.Rabbit.DTOs.Requests;
 using Common.Rabbit.DTOs.Responses;
 using EasyNetQ;
-using Microsoft.AspNetCore.Http;
 using StackExchange.Redis;
-using System.Text.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Common.Rabbit
@@ -15,24 +13,25 @@ namespace Common.Rabbit
         public readonly IBus _bus;
         protected readonly IServiceProvider _serviceProvider;
         private readonly IConnectionMultiplexer _redis;
-        private int SuccessRequestsCount = 1;
-        private int TotalRequestsCount = 1;
+        private readonly Random _random;
+
+        private int SuccessRequestCount = 1;
+        private int TotalRequestCount = 1;
+
+        private bool State = true;
 
         public RabbitMQ(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _bus = RabbitHutch.CreateBus(Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION") != null ? Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION") : "host=localhost");
+            _random = new Random();
 
             Configure();
         }
 
-        public RabbitMQ(IServiceProvider serviceProvider, IConnectionMultiplexer redis)
+        public RabbitMQ(IServiceProvider serviceProvider, IConnectionMultiplexer redis) : this(serviceProvider)
         {
-            _serviceProvider = serviceProvider;
-            _bus = RabbitHutch.CreateBus(Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION") != null ? Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION") : "host=localhost");
             _redis = redis;
-
-            Configure();
         }
 
         public Func<TRequest, TResponse> InstabilityWrapper<TRequest, TResponse>(Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
@@ -40,34 +39,16 @@ namespace Common.Rabbit
             return (Request) =>
             {
                 RabbitResponse Response;
-                if (DateTime.UtcNow.Minute % 2 != 0)
+                double FailureProbability = DateTime.UtcNow.Minute % 2 != 0 ? 0.5 : 0.9;
+
+                if (_random.NextDouble() < FailureProbability)
                 {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.5)
-                    {
-                        Response = Action(Request);
-                    }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
+                    Response = new RabbitResponse(500, "Что-то пошло не так");
                 }
                 else
                 {
-                    if ((double)SuccessRequestsCount / TotalRequestsCount < 0.9)
-                    {
-                        Response = Action(Request);
-                    }
-                    else
-                    {
-                        Response = new RabbitResponse(500, "Что-то пошло не так");
-                    }
+                    Response = Action(Request);
                 }
-
-                if (Response.status != 500)
-                {
-                    SuccessRequestsCount++;
-                }
-                TotalRequestsCount++;
 
                 return Response as TResponse;
             };
@@ -115,7 +96,44 @@ namespace Common.Rabbit
             };
         }
 
-        protected void RpcRespond<TRequest, TResponse>(Func<TRequest, TResponse> Action) where TResponse : RabbitResponse
+        public TResponse RpcRequest<TRequest, TResponse>(TRequest Request, string QueueName) where TResponse : RabbitResponse
+        {
+            if (State)
+            {
+                TResponse Response = _bus.Rpc.Request<TRequest, TResponse>(Request, configure => configure.WithQueueName(QueueName));
+                TimeSpan RetryTime = TimeSpan.FromSeconds(1);
+
+                while (Response?.status == 500)
+                {
+                    if (State)
+                    {
+                        Thread.Sleep(RetryTime);
+                        RetryTime = TimeSpan.FromSeconds(Math.Min(RetryTime.Seconds * 2, 30));
+                        TotalRequestCount++;
+
+                        if ((double)SuccessRequestCount / TotalRequestCount < 0.3)
+                        {
+                            State = false;
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(30));
+                    }
+                    Response = _bus.Rpc.Request<TRequest, TResponse>(Request, configure => configure.WithQueueName(QueueName));
+                }
+                State = true;
+                SuccessRequestCount++;
+                TotalRequestCount++;
+                return Response;
+            }
+            else
+            {
+                return new RabbitResponse(500, "Сервис временно недоступен") as TResponse;
+            }
+        }
+
+        protected void RpcRespond<TRequest, TResponse>(Func<TRequest, TResponse> Action, string QueueName) where TResponse : RabbitResponse
         {
             _bus.Rpc.Respond<TRequest, TResponse>(Request =>
             {
@@ -130,7 +148,7 @@ namespace Common.Rabbit
                 }
   
                 return RespondFunction(Request);
-            });
+            }, configure => configure.WithQueueName(QueueName));
         }
 
 

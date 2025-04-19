@@ -90,7 +90,7 @@ namespace Core.Services
 
         public void CloseAccount(Account Account)
         {
-            var CreditCheckResponse = _rabbit._bus.Rpc.Request<Guid, CreditCheckResponse>(Account.Id);
+            var CreditCheckResponse = _rabbit.RpcRequest<Guid, CreditCheckResponse>(Account.Id, QueueName: "CreditCheck");
 
             if (CreditCheckResponse.status == 404)
             {

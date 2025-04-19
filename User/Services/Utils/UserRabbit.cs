@@ -27,7 +27,7 @@ namespace UserApi.Services.Utils
                         IsBlocked = User.IsBlocked,
                     };
                 }
-            });
+            }, QueueName: "UserInfoById");
 
             RpcRespond<string, UserInfoResponse>(Email =>
             {
@@ -58,7 +58,7 @@ namespace UserApi.Services.Utils
 
                     return UserInfo;
                 }
-            });
+            }, QueueName: "UserInfoByEmail");
 
             RpcRespond<string, EmployeeDeviceTokensResponse>(_ =>
             {
@@ -68,7 +68,7 @@ namespace UserApi.Services.Utils
 
                     return new EmployeeDeviceTokensResponse(UserService.GetEmployeeDeviceTokens());
                 }
-            });
+            }, QueueName: "EmployeeDeviceToken");
 
             RpcRespond<Guid, ClientDeviceTokenResponse>(ClientId =>
             {
@@ -78,7 +78,7 @@ namespace UserApi.Services.Utils
 
                     return new ClientDeviceTokenResponse(UserService.GetClientDeviceToken(ClientId));
                 }
-            });
+            }, QueueName: "ClientDeviceToken");
         }
     }
 }

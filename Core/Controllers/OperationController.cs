@@ -95,7 +95,7 @@ namespace Core.Controllers
                 IdempotencyKey = Guid.NewGuid()
             };
 
-            var RabbitResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, RabbitResponse>(CashOperationRequest);
+            var RabbitResponse = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(CashOperationRequest, QueueName: "Operations");
             if (RabbitResponse.status != 200) { return new ObjectResult(new ErrorResponse(RabbitResponse)) { StatusCode = RabbitResponse.status }; }
 
             return Ok();
@@ -121,7 +121,7 @@ namespace Core.Controllers
                 IdempotencyKey = Guid.NewGuid()
             };
 
-            var RabbitResponse = _rabbit._bus.Rpc.Request<RabbitOperationRequest, RabbitResponse>(TransferOperationRequest);
+            var RabbitResponse = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(TransferOperationRequest, QueueName: "Operations");
             if (RabbitResponse.status != 200) { return new ObjectResult(new ErrorResponse(RabbitResponse)) { StatusCode = RabbitResponse.status }; }
 
             return Ok();

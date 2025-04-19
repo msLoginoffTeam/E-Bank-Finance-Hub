@@ -88,16 +88,16 @@ namespace Core_Api.Services.Utils
             {
                 foreach (var ClientNotification in _clientNotifications)
                 {
-                    Task<ClientDeviceTokenResponse> ClientDeviceToken = _rabbit._bus.Rpc.RequestAsync<Guid, ClientDeviceTokenResponse>(ClientNotification.ClientId);
-                    Send(new FirebaseNotification((await ClientDeviceToken).DeviceToken, ClientNotification.Notification));
+                    ClientDeviceTokenResponse ClientDeviceToken = _rabbit.RpcRequest<Guid, ClientDeviceTokenResponse>(ClientNotification.ClientId, "ClientDeviceToken");
+                    Send(new FirebaseNotification(ClientDeviceToken.DeviceToken, ClientNotification.Notification));
                 }
             }
             if (!_employeeNotifications.IsNullOrEmpty())
             {
-                Task<EmployeeDeviceTokensResponse> EmployeeDeviceTokens = _rabbit._bus.Rpc.RequestAsync<string, EmployeeDeviceTokensResponse>("");
+                EmployeeDeviceTokensResponse EmployeeDeviceTokens = _rabbit.RpcRequest<string, EmployeeDeviceTokensResponse>("", "EmployeeDeviceToken");
                 foreach (var EmployeeNotification in _employeeNotifications)
                 {
-                    foreach (var EmployeeDeviceId in (await EmployeeDeviceTokens).DeviceTokens)
+                    foreach (var EmployeeDeviceId in EmployeeDeviceTokens.DeviceTokens)
                     {
                         Send(new FirebaseNotification(EmployeeDeviceId, EmployeeNotification));
                     }
