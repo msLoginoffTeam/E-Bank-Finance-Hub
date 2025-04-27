@@ -24,7 +24,23 @@ namespace Core_Api.Services.Utils
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(async _ => await ProcessNotifications(), null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            _timer = new Timer(async _ =>
+            {
+                Task ClientNotifications = null;
+                Task EmployeeNotifications = null;
+
+                if (!_clientNotifications.IsNullOrEmpty())
+                {
+                    ClientNotifications = ProcessClientNotifications();
+                }
+                if (!_employeeNotifications.IsNullOrEmpty())
+                {
+                    EmployeeNotifications = ProcessEmployeeNotifications();
+                }
+                if (ClientNotifications != null) await ClientNotifications;
+                if (EmployeeNotifications != null) await EmployeeNotifications;
+
+            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
             return Task.CompletedTask;
         }
 
@@ -82,25 +98,30 @@ namespace Core_Api.Services.Utils
 
         }
 
-        private async Task ProcessNotifications()
+        private async Task ProcessClientNotifications()
         {
-            if (!_clientNotifications.IsNullOrEmpty())
+            var tmp = _clientNotifications.ToList();
+            _clientNotifications.Clear();
+
+            foreach (var ClientNotification in tmp)
             {
-                foreach (var ClientNotification in _clientNotifications)
-                {
-                    ClientDeviceTokenResponse ClientDeviceToken = _rabbit.RpcRequest<Guid, ClientDeviceTokenResponse>(ClientNotification.ClientId, "ClientDeviceToken");
-                    Send(new FirebaseNotification(ClientDeviceToken.DeviceToken, ClientNotification.Notification));
-                }
+                ClientDeviceTokenResponse ClientDeviceToken = _rabbit.RpcRequest<Guid, ClientDeviceTokenResponse>(ClientNotification.ClientId, "ClientDeviceToken");
+                Send(new FirebaseNotification(ClientDeviceToken.DeviceToken, ClientNotification.Notification));
             }
-            if (!_employeeNotifications.IsNullOrEmpty())
+            return;
+        }
+
+        private async Task ProcessEmployeeNotifications()
+        {
+            var tmp = _employeeNotifications.ToList();
+            _employeeNotifications.Clear();
+
+            EmployeeDeviceTokensResponse EmployeeDeviceTokens = _rabbit.RpcRequest<string, EmployeeDeviceTokensResponse>("", "EmployeeDeviceToken");
+            foreach (var EmployeeNotification in _employeeNotifications)
             {
-                EmployeeDeviceTokensResponse EmployeeDeviceTokens = _rabbit.RpcRequest<string, EmployeeDeviceTokensResponse>("", "EmployeeDeviceToken");
-                foreach (var EmployeeNotification in _employeeNotifications)
+                foreach (var EmployeeDeviceId in EmployeeDeviceTokens.DeviceTokens)
                 {
-                    foreach (var EmployeeDeviceId in EmployeeDeviceTokens.DeviceTokens)
-                    {
-                        Send(new FirebaseNotification(EmployeeDeviceId, EmployeeNotification));
-                    }
+                    Send(new FirebaseNotification(EmployeeDeviceId, EmployeeNotification));
                 }
             }
             return;
@@ -108,10 +129,21 @@ namespace Core_Api.Services.Utils
 
         private async void Send(FirebaseNotification FirebaseNotification)
         {
-            var content = new StringContent(JsonConvert.SerializeObject(FirebaseNotification), Encoding.UTF8, "application/json");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("key", Environment.GetEnvironmentVariable("FIREBASE_SECRET"));  
+            var content = new StringContent(JsonConvert.SerializeObject(new FirebaseMessage(FirebaseNotification)), Encoding.UTF8, "application/json");
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("FIREBASE_SECRET"));  
   
-            var response = await _client.PostAsync("https://fcm.googleapis.com/v1/projects/1:969331888663:web:00e538d7825c8f8ae48252/messages:send", content);
+            var response = await _client.PostAsync("https://fcm.googleapis.com/v1/projects/707924622826/messages:send", content);
+        }
+    }
+
+    public class FirebaseMessage
+    {
+        public FirebaseNotification message { get; set; }
+
+        public FirebaseMessage(){}
+        public FirebaseMessage(FirebaseNotification message)
+        {
+            this.message = message;
         }
     }
 

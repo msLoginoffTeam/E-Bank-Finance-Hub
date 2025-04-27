@@ -1,7 +1,6 @@
 ﻿using Common.Data.DTOs;
 using Common.ErrorHandling;
 using Common.Rabbit.DTOs.Responses;
-using EasyNetQ;
 using UserApi.Data.Models;
 
 namespace UserApi.Services.Utils
@@ -76,7 +75,9 @@ namespace UserApi.Services.Utils
                 {
                     UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
 
-                    return new ClientDeviceTokenResponse(UserService.GetClientDeviceToken(ClientId));
+                    var ClientDeviceToken = UserService.GetClientDeviceToken(ClientId);
+
+                    return new ClientDeviceTokenResponse(ClientDeviceToken);
                 }
             }, QueueName: "ClientDeviceToken");
         }
