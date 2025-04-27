@@ -4,6 +4,7 @@ using Common;
 using Common.ErrorHandling;
 using Common.Idempotency;
 using Common.InternalServerErrorMiddleware;
+using Common.Trace;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -64,6 +65,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(Environment.GetEnvironmentVariable("USER_DATABASE_CONNECTION") != null ? Environment.GetEnvironmentVariable("USER_DATABASE_CONNECTION") : builder.Configuration.GetConnectionString("DataBase")));
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<UserRabbit>();
+builder.Services.AddSingleton<Tracer>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
 Console.WriteLine(Environment.GetEnvironmentVariable("REDIS_CONNECTION"));
 builder.Services.AddCustomAuthentication();
@@ -81,9 +83,12 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.Migrate();
 
-    var rabbit = app.Services.GetRequiredService<UserRabbit>();
-    rabbit = new UserRabbit(app.Services);
+	var tracer = app.Services.GetRequiredService<Tracer>();
 
+	var logger = app.Services.GetRequiredService<ILogger<UserRabbit>>();
+
+	var rabbit = app.Services.GetRequiredService<UserRabbit>();
+	rabbit = new UserRabbit(app.Services, tracer, logger);
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -14,6 +14,7 @@ using EasyNetQ;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace CreditService_Patterns.Services;
 
@@ -358,7 +359,7 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData)
+    public async Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData, string TraceId)
     {
         try
         {
@@ -378,7 +379,7 @@ public class CreditService : ICreditService
             }
 
 
-            RabbitResponse RabbitResponse = _rabbit.RpcRequest<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId), QueueName: "AccountExistCheck");
+            RabbitResponse RabbitResponse = _rabbit.RpcRequest<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId, TraceId), QueueName: "AccountExistCheck");
             if (RabbitResponse.status != 200) throw new CustomException(RabbitResponse);
 
             var newCredit = new ClientCreditDbModel
@@ -402,7 +403,8 @@ public class CreditService : ICreditService
                 CreditId = newCredit.Id,
                 Amount = newCredit.Amount,
                 OperationType = OperationType.Income.ToString(),
-                IdempotencyKey = Guid.NewGuid()
+                IdempotencyKey = Guid.NewGuid(),
+                TraceId = TraceId
             };
             var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
@@ -418,7 +420,7 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData)
+    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData, string TraceId)
     {
         try
         {
@@ -445,7 +447,8 @@ public class CreditService : ICreditService
                 Amount = newPayment.PaymentAmount,
                 OperationType = OperationType.Outcome.ToString(),
                 Type = Common.Models.CreditOperationType.ByUser,
-                IdempotencyKey = Guid.NewGuid()
+                IdempotencyKey = Guid.NewGuid(),
+                TraceId = TraceId
             };
 
             var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
@@ -490,7 +493,7 @@ public class CreditService : ICreditService
 
 
 
-    public async Task PayOffTheLoanAutomaticAsync()
+    public async Task PayOffTheLoanAutomaticAsync(string TraceId)
     {
         try
         {
@@ -520,7 +523,8 @@ public class CreditService : ICreditService
                     Amount = PaymentAmount,
                     OperationType = OperationType.Outcome.ToString(),
                     Type = Common.Models.CreditOperationType.Automatic,
-                    IdempotencyKey = Guid.NewGuid()
+                    IdempotencyKey = Guid.NewGuid(),
+                    TraceId = TraceId
                 };
 
                 response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
@@ -634,14 +638,14 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<RatingResponseDTO> GetRatingAsync(Guid ClientId)
+    public async Task<RatingResponseDTO> GetRatingAsync(Guid ClientId, string TraceId)
     {
         var rating = new RatingResponseDTO
         {
             ClientId = ClientId,
             Rating = 0
         };
-        var response = _rabbit.RpcRequest<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId }, QueueName: "GetRating");
+        var response = _rabbit.RpcRequest<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId, TraceId = TraceId }, QueueName: "GetRating");
         if (response.status != 200)
         {
             throw new CustomException(response);

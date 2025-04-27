@@ -1,4 +1,5 @@
-﻿using Common.Rabbit.DTOs.Responses;
+﻿using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services.Utils;
 using EasyNetQ;

@@ -2,6 +2,8 @@ using Common;
 using Common.ErrorHandling;
 using Common.Idempotency;
 using Common.InternalServerErrorMiddleware;
+using Common.Rabbit;
+using Common.Trace;
 using Core.Data;
 using Core.Services;
 using Core.Services.Utils;
@@ -67,6 +69,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<OperationService>();
 builder.Services.AddSingleton<CoreRabbit>();
+builder.Services.AddSingleton<Tracer>();
 builder.Services.AddHostedService<CurrencyCoursesGetter>();
 builder.Services.AddSingleton<WebSocketServerManager>();
 builder.Services.AddHostedService<FirebaseNotificator>();
@@ -93,8 +96,10 @@ using (var scope = app.Services.CreateScope())
     var webSocket = app.Services.GetRequiredService<WebSocketServerManager>();
     webSocket.Start();
 
-    var bus = app.Services.GetRequiredService<CoreRabbit>();
-    bus = new CoreRabbit(app.Services, app.Services.GetRequiredService<IConnectionMultiplexer>());
+	var tracer = app.Services.GetRequiredService<Tracer>();
+
+	var bus = app.Services.GetRequiredService<CoreRabbit>();
+	bus = new CoreRabbit(app.Services, app.Services.GetRequiredService<IConnectionMultiplexer>(), tracer);
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

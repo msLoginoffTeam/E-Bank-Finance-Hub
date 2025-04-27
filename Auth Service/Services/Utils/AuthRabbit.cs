@@ -1,6 +1,7 @@
 ﻿using Auth_Service.Data.DTOs;
 using Auth_Service.Data.Models;
 using Common.Rabbit.DTOs;
+using Common.Trace;
 using EasyNetQ;
 using UserApi.Data.Models;
 
@@ -8,7 +9,11 @@ namespace Auth_Service.Services.Utils
 {
     public class AuthRabbit : Common.Rabbit.RabbitMQ
     {
-        public AuthRabbit(IServiceProvider serviceProvider) : base(serviceProvider) { }
+		private readonly Tracer _tracer;
+		public AuthRabbit(IServiceProvider serviceProvider, Tracer tracer) : base(serviceProvider) 
+        {
+			_tracer = tracer;
+		}
 
         public override void Configure()
         {
@@ -16,7 +21,9 @@ namespace Auth_Service.Services.Utils
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    AuthService AuthService = scope.ServiceProvider.GetRequiredService<AuthService>();
+                    string traceId = UserAuthDTO.TraceId;
+                    var trace = _tracer.StartRequest(traceId, "RPC - Register", $"UserAuthDTO: {UserAuthDTO}");
+					AuthService AuthService = scope.ServiceProvider.GetRequiredService<AuthService>();
 
                     UserAuth UserAuth;
                     if (UserAuthDTO.Role == Role.Client.ToString())
@@ -27,7 +34,8 @@ namespace Auth_Service.Services.Utils
                     {
                         UserAuth = new EmployeeAuth(UserAuthDTO);
                     }
-                    AuthService.Register(UserAuth);
+					_tracer.EndRequest(trace.DictionaryId, success: true, 200);
+					AuthService.Register(UserAuth);
                 }
             });
         }

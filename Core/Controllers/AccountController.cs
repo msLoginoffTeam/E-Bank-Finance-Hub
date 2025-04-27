@@ -1,10 +1,13 @@
 ﻿using Common.ErrorHandling;
 using Common.Idempotency;
+using Common.Rabbit.DTOs.Requests;
+using Common.Trace;
 using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
 using Core_Api.Data.DTOs.Requests;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Core.Controllers
@@ -14,28 +17,32 @@ namespace Core.Controllers
     public class AccountController : ControllerBase
     {
         private readonly AccountService _accountService;
-        public AccountController(AccountService accountService)
-        {
-            _accountService = accountService;
-        }
+		private readonly Tracer _tracer;
+		public AccountController(AccountService accountService, Tracer tracer)
+		{
+			_accountService = accountService;
+			_tracer = tracer;
+		}
 
-        /// <summary>  
-        /// Открытие счета в банке
-        /// </summary>
-        [Authorize(Roles = "Client")]
+		/// <summary>  
+		/// Открытие счета в банке
+		/// </summary>
+		[Authorize(Roles = "Client")]
         [HttpPost]
         [Route("open")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult createAccount(CreateAccountRequest CreateRequest)
         {
-            var ClientId = User.Claims.ToList()[0].Value;
-            Client Client = _accountService.GetClient(new Guid(ClientId));
+			var trace = _tracer.StartRequest(null, "AccountController - createAccount", $"CreateRequest:{CreateRequest}");
+			var ClientId = User.Claims.ToList()[0].Value;
+			Client Client = _accountService.GetClient(new Guid(ClientId));
 
-            Account Account = new Account(CreateRequest, Client);
-            _accountService.CreateAccount(Account);
+			Account Account = new Account(CreateRequest, Client);
+			_accountService.CreateAccount(Account);
 
-            return Ok();
-        }
+			_tracer.EndRequest(trace.DictionaryId, success: true, 200);
+			return Ok();
+		}
 
         /// <summary>  
         /// Получение счетов пользователя
@@ -46,22 +53,29 @@ namespace Core.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult getAccounts(Guid? ClientId)
         {
-            var UserId = User.Claims.ToList()[0].Value;
-            var Role = User.Claims.ToList()[2].Value;
+			var trace = _tracer.StartRequest(null, "AccountController - getAccounts", $"ClientId:{ClientId}");
 
-            List<Account> Accounts;
-            if (Role == "Client")
-            {
-                Accounts = _accountService.GetAccounts(new Guid(UserId));
-            }
-            else if (ClientId != null)
-            {
-                Accounts = _accountService.GetAccounts((Guid)ClientId);
-            }
-            else throw new ErrorException(400, "Необходимо передать ClientId, если вы менеджер или работник.");
+			var UserId = User.Claims.ToList()[0].Value;
+			var Role = User.Claims.ToList()[2].Value;
 
-            return Ok(Accounts.Select(Account => new AccountResponse(Account)).ToList());
-        }
+			List<Account> Accounts;
+			if (Role == "Client")
+			{
+				Accounts = _accountService.GetAccounts(new Guid(UserId));
+			}
+			else if (ClientId != null)
+			{
+				Accounts = _accountService.GetAccounts((Guid)ClientId);
+			}
+			else
+			{
+				_tracer.EndRequest(trace.DictionaryId, success: false, 400, "Необходимо передать ClientId, если вы менеджер или работник.");
+				throw new ErrorException(400, "Необходимо передать ClientId, если вы менеджер или работник.");
+			}
+
+			_tracer.EndRequest(trace.DictionaryId, success: true, 200);
+			return Ok(Accounts.Select(Account => new AccountResponse(Account)).ToList());
+		}
 
         /// <summary>  
         /// Закрытие счета в банке
@@ -72,14 +86,21 @@ namespace Core.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult closeAccount(Guid AccountId)
         {
-            var ClientId = User.Claims.ToList()[0].Value;
-            Account Account = _accountService.GetAccount(AccountId, new Guid(ClientId));
+			var trace = _tracer.StartRequest(null, "AccountController - closeAccount", $"AccountId:{AccountId}");
 
-            if (Account.IsClosed == true) throw new ErrorException(400, "Счет уже закрыт");
+			var ClientId = User.Claims.ToList()[0].Value;
+			Account Account = _accountService.GetAccount(AccountId, new Guid(ClientId));
 
-            _accountService.CloseAccount(Account);
+			if (Account.IsClosed == true)
+			{
+				_tracer.EndRequest(trace.DictionaryId, success: false, 400, "Счет уже закрыт");
+				throw new ErrorException(400, "Счет уже закрыт");
+			}
 
-            return Ok();
-        }
+			_accountService.CloseAccount(Account, trace.TraceId);
+
+			_tracer.EndRequest(trace.DictionaryId, success: true, 200);
+			return Ok();
+		}
     }
 }

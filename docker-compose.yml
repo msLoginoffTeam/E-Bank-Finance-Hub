@@ -67,6 +67,22 @@ services:
       - db
       - rabbitmq 
 
+  trace:    
+    build:  
+      context: . 
+      dockerfile: TraceDockerfile
+    ports:  
+      - "8084:8080"
+    environment:
+      TRACE_DATABASE_CONNECTION: ${TRACE_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+    networks:  
+      - network
+    depends_on:  
+      - db
+      - rabbitmq 
+    command: ["/wait-for-it.sh", "db:5432", "--", "dotnet", "TraceService.dll"]
+
   db:  
     image: postgres:latest
     container_name: db

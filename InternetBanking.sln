@@ -13,6 +13,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth Service", "Auth Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraceService", "TraceService\TraceService.csproj", "{439E165E-CF4F-4DF7-9DEF-3230885100A7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64} = {CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +44,15 @@ Global
 		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC3B0668-9CF4-48AB-9A08-7CAFC0476C64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{439E165E-CF4F-4DF7-9DEF-3230885100A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{439E165E-CF4F-4DF7-9DEF-3230885100A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{439E165E-CF4F-4DF7-9DEF-3230885100A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{439E165E-CF4F-4DF7-9DEF-3230885100A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {782E381E-3D4F-46E9-98CD-9A3AEFB5ED0A}
 	EndGlobalSection
 EndGlobal

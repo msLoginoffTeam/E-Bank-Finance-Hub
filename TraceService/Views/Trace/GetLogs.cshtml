@@ -1,0 +1,325 @@
+﻿@model IEnumerable<TraceService.Data.Models.TraceDbModel>
+
+@using System.Text.Json
+@using Newtonsoft.Json
+
+@{
+    ViewData["Title"] = "Logs";
+
+    var groupedLogs = Model
+        .GroupBy(x => x.TraceId)
+        .Select(g => new
+        {
+            TraceId = g.Key,
+            Logs = g.OrderBy(l => l.Timestamp).ToList(),
+            OldestTimestamp = g.Min(l => l.Timestamp)
+        })
+        .OrderByDescending(g => g.OldestTimestamp)
+        .ToList();
+
+    var logsByMinute = Model
+        .GroupBy(x => new DateTime(x.Timestamp.Year, x.Timestamp.Month, x.Timestamp.Day, x.Timestamp.Hour, x.Timestamp.Minute, 0))
+        .OrderBy(x => x.Key)
+        .Select(g => new
+        {
+            Minute = g.Key.ToString("yyyy-MM-dd HH:mm"),
+            Count = g.Count(),
+            AvgMs = g.Any(x => x.Ms.HasValue) ? g.Where(x => x.Ms.HasValue).Average(x => x.Ms.Value) : 0,
+            SuccessRate = g.Any(x => x.Success.HasValue) ? g.Count(x => x.Success == true) * 100.0 / g.Count(x => x.Success.HasValue) : 0
+        })
+        .ToList();
+
+    var chartDataJson = JsonConvert.SerializeObject(logsByMinute);
+}
+
+<h2>Logs</h2>
+
+@if (ViewData["Message"] != null)
+{
+    <div class="alert alert-warning">
+        @ViewData["Message"]
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <canvas id="logsCountChart" style="height: 400px;"></canvas>
+    </div>
+    <div class="col-md-12 mb-4">
+        <canvas id="avgMsChart" style="height: 400px;"></canvas>
+    </div>
+    <div class="col-md-12 mb-4">
+        <canvas id="successRateChart" style="height: 400px;"></canvas>
+    </div>
+</div>
+
+<hr />
+<div id="logsTableContainer">
+    @foreach (var group in groupedLogs)
+    {
+        var firstLog = group.Logs.FirstOrDefault();
+        <h4 class="mt-4">
+            TraceId: @group.TraceId
+            @if (firstLog != null && !string.IsNullOrEmpty(firstLog.RequestHeaders))
+            {
+                <small class="text-muted">(@firstLog.RequestHeaders)</small>
+            }
+        </h4>
+
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                    <th>Success</th>
+                    <th>Ms</th>
+                    <th>Message</th>
+                    <th>Request Headers</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in group.Logs)
+                {
+                    <tr>
+                        <td style="word-break: break-word;">@log.Event</td>
+                        <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td style="word-break: break-word;">@log.Status</td>
+                        <td>@(log.Success == null ? "Not yet" : ((bool)log.Success ? "Yes" : "No"))</td>
+                        <td>@log.Ms</td>
+                        <td style="word-break: break-word;">@log.Message</td>
+                        <td style="word-break: break-word; white-space: pre-wrap;">@log.RequestHeaders</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+<style>
+    td {
+        max-width: 250px;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const chartData = @Html.Raw(chartDataJson);
+
+    const minutes = chartData.map(d => d.Minute);
+    const counts = chartData.map(d => d.Count);
+    const avgMs = chartData.map(d => d.AvgMs);
+    const successRates = chartData.map(d => d.SuccessRate);
+
+    let logsCountChart;
+    let avgMsChart;
+    let successRateChart;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const logsCountCtx = document.getElementById('logsCountChart').getContext('2d');
+        const avgMsCtx = document.getElementById('avgMsChart').getContext('2d');
+        const successRateCtx = document.getElementById('successRateChart').getContext('2d');
+
+        logsCountChart = new Chart(logsCountCtx, {
+            type: 'bar',
+            data: {
+                labels: minutes,
+                datasets: [{
+                    label: 'Logs Count per Minute',
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    data: counts,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Количество логов по минутам'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        avgMsChart = new Chart(avgMsCtx, {
+            type: 'line',
+            data: {
+                labels: minutes,
+                datasets: [{
+                    label: 'Average Ms per Minute',
+                    backgroundColor: '#1cc88a',
+                    borderColor: '#1cc88a',
+                    data: avgMs,
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Среднее время выполнения (Ms) по минутам'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        successRateChart = new Chart(successRateCtx, {
+            type: 'line',
+            data: {
+                labels: minutes,
+                datasets: [{
+                    label: 'Success Rate (%) per Minute',
+                    backgroundColor: '#36b9cc',
+                    borderColor: '#36b9cc',
+                    data: successRates,
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Процент успешных запросов по минутам'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    async function loadLogs() {
+        const response = await fetch('/Trace/GetLogsData');
+        const logs = await response.json();
+
+        updateCharts(logs);
+        updateTable(logs);
+    }
+
+    function updateCharts(logs) {
+        const groupedByMinute = logs.reduce((acc, log) => {
+            const minute = new Date(log.timestamp);
+            minute.setSeconds(0, 0);
+            const key = minute.toISOString().slice(0, 16).replace('T', ' ');
+
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(log);
+            return acc;
+        }, {});
+
+        const minutes = Object.keys(groupedByMinute).sort();
+        const counts = minutes.map(min => groupedByMinute[min].length);
+        const avgMs = minutes.map(min => {
+            const items = groupedByMinute[min];
+            const avg = items.filter(x => x.ms !== null).reduce((sum, l) => sum + l.ms, 0) / (items.filter(x => x.ms !== null).length || 1);
+            return avg;
+        });
+        const successRates = minutes.map(min => {
+            const items = groupedByMinute[min];
+            const successCount = items.filter(x => x.success === true).length;
+            const totalSuccessConsidered = items.filter(x => x.success !== null).length || 1;
+            return (successCount * 100) / totalSuccessConsidered;
+        });
+
+        if (logsCountChart) {
+            logsCountChart.data.labels = minutes;
+            logsCountChart.data.datasets[0].data = counts;
+            logsCountChart.update();
+        }
+
+        if (avgMsChart) {
+            avgMsChart.data.labels = minutes;
+            avgMsChart.data.datasets[0].data = avgMs;
+            avgMsChart.update();
+        }
+
+        if (successRateChart) {
+            successRateChart.data.labels = minutes;
+            successRateChart.data.datasets[0].data = successRates;
+            successRateChart.update();
+        }
+    }
+
+    function updateTable(logs) {
+        const tableContainer = document.getElementById('logsTableContainer');
+        if (!tableContainer) return;
+
+        const grouped = logs.reduce((acc, log) => {
+            if (!acc[log.traceId]) {
+                acc[log.traceId] = [];
+            }
+            acc[log.traceId].push(log);
+            return acc;
+        }, {});
+
+        const sortedGroups = Object.entries(grouped)
+            .map(([traceId, logs]) => ({
+                traceId,
+                logs: logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)),
+                oldestTimestamp: Math.min(...logs.map(l => new Date(l.timestamp)))
+            }))
+            .sort((a, b) => b.oldestTimestamp - a.oldestTimestamp);
+
+        let html = '';
+        for (const group of sortedGroups) {
+            const firstLog = group.logs[0];
+
+            html += `<h4 class="mt-4">TraceId: ${group.traceId}`;
+            if (firstLog && firstLog.requestHeaders) {
+                html += ` <small class="text-muted">(${firstLog.requestHeaders})</small>`;
+            }
+            html += `</h4>`;
+
+            html += `<table class="table table-striped table-bordered"><thead><tr>
+                <th>Event</th><th>Timestamp</th><th>Status</th><th>Success</th><th>Ms</th><th>Message</th><th>Request Headers</th>
+            </tr></thead><tbody>`;
+
+            for (const log of group.logs) {
+                html += `<tr>
+                    <td style="word-break: break-word;">${log.event}</td>
+                    <td>${new Date(log.timestamp).toLocaleString()}</td>
+                    <td style="word-break: break-word;">${log.status}</td>
+                    <td>${log.success == null ? 'Not yet' : (log.success ? 'Yes' : 'No')}</td>
+                    <td>${log.ms ?? ''}</td>
+                    <td style="word-break: break-word;">${log.message ?? ''}</td>
+                    <td style="word-break: break-word; white-space: pre-wrap;">${log.requestHeaders ?? ''}</td>
+                </tr>`;
+            }
+
+            html += `</tbody></table>`;
+        }
+
+        tableContainer.innerHTML = html;
+    }
+
+    setInterval(loadLogs, 5000);
+</script>

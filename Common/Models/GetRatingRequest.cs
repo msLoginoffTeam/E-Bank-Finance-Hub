@@ -10,12 +10,14 @@ namespace Common.Models
     public class GetRatingRequest
     {
         public Guid ClientId { get; set; }
+        public string TraceId { get; set; }
 
         public GetRatingRequest() {}
 
-        public GetRatingRequest(Guid ClientId)
+        public GetRatingRequest(Guid ClientId, string TraceId)
         {
             this.ClientId = ClientId;
+            this.TraceId = TraceId;
         }
     }
 }

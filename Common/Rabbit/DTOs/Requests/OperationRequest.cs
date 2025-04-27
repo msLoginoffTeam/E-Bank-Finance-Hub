@@ -8,6 +8,7 @@ namespace Common.Rabbit.DTOs.Requests
         public Guid AccountId { get; set; }
         public int Amount { get; set; }
         public string? OperationType { get; set; }
+        public string TraceId { get; set; }
 
         public RabbitOperationRequest() : base() { }
     }

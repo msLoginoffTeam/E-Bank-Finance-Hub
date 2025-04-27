@@ -1,0 +1,13 @@
+{
+  "ConnectionStrings": {
+    "DataBase": "Server=db;Port=5432;Database=TraceDb;Username=postgres;Password=admin"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}
