@@ -9,6 +9,10 @@ using Quartz;
 using Common;
 using CreditService_Patterns.Services.Utils;
 using UserApi.Services.Utils;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
+using StackExchange.Redis;
+using Common.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +63,8 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddSingleton<CreditRabbit>();
+builder.Services.AddSingleton<Tracer>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
@@ -89,8 +95,10 @@ using (var scope = app.Services.CreateScope())
     var CreditServiceContext = scope.ServiceProvider.GetRequiredService<CreditServiceContext>();
     await CreditServiceContext.Database.MigrateAsync();
 
-    var rabbit = app.Services.GetRequiredService<CreditRabbit>();
-    rabbit = new CreditRabbit(app.Services);
+	var tracer = app.Services.GetRequiredService<Tracer>();
+
+	var rabbit = app.Services.GetRequiredService<CreditRabbit>();
+	rabbit = new CreditRabbit(app.Services, tracer);
 }
 app.UseCors("AllowAllOrigins");
 
@@ -103,6 +111,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true") app.UseMiddleware<HttpInstabilityMiddleware>();
+
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapControllers();
 

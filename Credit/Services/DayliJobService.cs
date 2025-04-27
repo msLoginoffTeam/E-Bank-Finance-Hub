@@ -3,16 +3,20 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using CreditService_Patterns.IServices;
+using Common.Trace;
+using Common.Rabbit.DTOs.Responses;
 
 public class DailyJobService : IJob
 {
     private readonly ILogger<DailyJobService> _logger;
     private readonly ICreditService _creditService;
+    private readonly Tracer _tracer;
 
-    public DailyJobService(ILogger<DailyJobService> logger, ICreditService creditService)
+    public DailyJobService(ILogger<DailyJobService> logger, ICreditService creditService, Tracer tracer)
     {
         _logger = logger;
         _creditService = creditService;
+        _tracer = tracer;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -21,24 +25,27 @@ public class DailyJobService : IJob
 
         try
         {
-            //try
-            //{
-            //    await _creditService.PercentAsync();
-            //    _logger.LogInformation("Фоновая задача по обновлению процентов выполнена успешно.");
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError($"Ошибка в методе PercentAsync: {ex.Message}");
-            //}
+			//try
+			//{
+			//    await _creditService.PercentAsync();
+			//    _logger.LogInformation("Фоновая задача по обновлению процентов выполнена успешно.");
+			//}
+			//catch (Exception ex)
+			//{
+			//    _logger.LogError($"Ошибка в методе PercentAsync: {ex.Message}");
+			//}
 
-            try
+			var trace = _tracer.StartRequest(null, "DailyJobService - PayOffTheLoanAutomaticAsync");
+			try
             {
-                await _creditService.PayOffTheLoanAutomaticAsync();
-                _logger.LogInformation("Фоновая задача по погашению кредита выполнена успешно.");
+				await _creditService.PayOffTheLoanAutomaticAsync(trace.TraceId);
+                _tracer.EndRequest(trace.DictionaryId, true, 200);
+				_logger.LogInformation("Фоновая задача по погашению кредита выполнена успешно.");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Ошибка в методе PayOffTheLoanAutomaticAsync: {ex.Message}");
+				_tracer.EndRequest(trace.DictionaryId, true, 500);
+				_logger.LogError($"Ошибка в методе PayOffTheLoanAutomaticAsync: {ex.Message}");
             }
         }
         catch (Exception ex)

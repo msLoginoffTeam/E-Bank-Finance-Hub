@@ -1,5 +1,9 @@
 using Common;
 using Common.ErrorHandling;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
+using Common.Rabbit;
+using Common.Trace;
 using Core.Data;
 using Core.Services;
 using Core.Services.Utils;
@@ -7,7 +11,9 @@ using Core_Api.Services.Utils;
 using Fleck;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -17,7 +23,9 @@ builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
                    .AddJsonFile("coreappsettings.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(Environment.GetEnvironmentVariable("CORE_DATABASE_CONNECTION") != null ? Environment.GetEnvironmentVariable("CORE_DATABASE_CONNECTION") : builder.Configuration.GetConnectionString("DataBase")));
 
@@ -61,8 +69,12 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<OperationService>();
 builder.Services.AddSingleton<CoreRabbit>();
+builder.Services.AddSingleton<Tracer>();
 builder.Services.AddHostedService<CurrencyCoursesGetter>();
 builder.Services.AddSingleton<WebSocketServerManager>();
+builder.Services.AddHostedService<FirebaseNotificator>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
+Console.WriteLine(Environment.GetEnvironmentVariable("REDIS_CONNECTION"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
@@ -84,8 +96,10 @@ using (var scope = app.Services.CreateScope())
     var webSocket = app.Services.GetRequiredService<WebSocketServerManager>();
     webSocket.Start();
 
-    var bus = app.Services.GetRequiredService<CoreRabbit>();
-    bus = new CoreRabbit(app.Services, webSocket);
+	var tracer = app.Services.GetRequiredService<Tracer>();
+
+	var bus = app.Services.GetRequiredService<CoreRabbit>();
+	bus = new CoreRabbit(app.Services, app.Services.GetRequiredService<IConnectionMultiplexer>(), tracer);
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -95,11 +109,15 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowAllOrigins");
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
-
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
+if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true") app.UseMiddleware<HttpInstabilityMiddleware>();
+
+app.UseMiddleware<IdempotencyMiddleware>();
 
 app.MapControllers();
 

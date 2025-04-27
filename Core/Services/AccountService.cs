@@ -1,5 +1,7 @@
 ﻿using Common.ErrorHandling;
 using Common.Rabbit;
+using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data;
 using Core.Data.Models;
 using Core.Services.Utils;
@@ -87,11 +89,11 @@ namespace Core.Services
             _context.SaveChanges();
         }
 
-        public void CloseAccount(Account Account)
+        public void CloseAccount(Account Account, string TraceId)
         {
-            var AccountHaveCredit = _rabbit._bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
+            var CreditCheckResponse = _rabbit.RpcRequest<CreditCheckDTO, CreditCheckResponse>(new CreditCheckDTO() { AccountId = Account.Id, TraceId = TraceId }, QueueName: "CreditCheck");
 
-            if (!AccountHaveCredit)
+            if (CreditCheckResponse.status == 404)
             {
                 Account.IsClosed = true;
                 _context.SaveChanges();

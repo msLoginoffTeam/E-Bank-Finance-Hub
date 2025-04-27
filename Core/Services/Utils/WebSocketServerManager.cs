@@ -4,7 +4,6 @@ using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
 using Fleck;
-using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
@@ -13,12 +12,12 @@ namespace Core_Api.Services.Utils
     public class WebSocketServerManager
     {
         private WebSocketServer _server { get; set; }
-        private List<ClientOperationsBroadcast> _clients { get; set; }
+        private static List<ClientOperationsBroadcast> _clients { get; set; }
 
         private readonly IServiceProvider _serviceProvider;
-        private Common.AuthenticationConfiguration Configuration { get; set; }
+        private AuthenticationConfiguration Configuration { get; set; }
 
-        public WebSocketServerManager(Common.AuthenticationConfiguration Configuration, IServiceProvider serviceProvider)
+        public WebSocketServerManager(AuthenticationConfiguration Configuration, IServiceProvider serviceProvider)
         {
             this.Configuration = Configuration;
             _serviceProvider = serviceProvider;
@@ -124,7 +123,35 @@ namespace Core_Api.Services.Utils
             });
         }
 
-        public List<IWebSocketConnection>? GetBroadcast(Guid AccountId)
+        public static void Send(Operation Operation)
+        {
+            object OperationResponse;
+            var Sockets = new List<IWebSocketConnection>();
+
+            if (Operation is TransferOperation TransferOperation)
+            {
+                OperationResponse = new TransferOperationResponse(TransferOperation);
+                Sockets.AddRange(GetBroadcast(TransferOperation.SenderAccount.Id) ?? new List<IWebSocketConnection>());
+            }
+            else if (Operation is CreditOperation CreditOperation)
+            {
+                OperationResponse = new CreditOperationResponse(CreditOperation);
+            }
+            else
+            {
+                OperationResponse = new CashOperationResponse(Operation as CashOperation);
+            }
+            Sockets.AddRange(GetBroadcast(Operation.TargetAccount.Id) ?? new List<IWebSocketConnection>());
+
+            var Response = JsonSerializer.Serialize(OperationResponse, new JsonSerializerOptions()
+            {
+                Converters = { new JsonStringEnumConverter() }
+            });
+
+            Sockets?.ForEach(Socket => Socket.Send(Response));
+        }
+
+        public static List<IWebSocketConnection>? GetBroadcast(Guid AccountId)
         {
             return _clients.FirstOrDefault(OperationBroadcast => OperationBroadcast.AccountId == AccountId)?.Receivers;
         }

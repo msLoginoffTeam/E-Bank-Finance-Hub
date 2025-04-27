@@ -14,6 +14,8 @@ namespace UserApi.Data.Models
 
         public bool IsBlocked { get; set; }
 
+        public string? DeviceToken { get; set; }
+
         public List<UserRole> Roles { get; set; }
 
         public User() {}

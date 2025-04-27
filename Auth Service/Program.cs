@@ -3,8 +3,13 @@ using Auth_Service.Services;
 using Auth_Service.Services.Utils;
 using Common;
 using Common.ErrorHandling;
+using Common.Idempotency;
+using Common.InternalServerErrorMiddleware;
+using Common.Rabbit;
+using Common.Trace;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using UserApi.Services.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +35,8 @@ builder.Services.AddDbContext<AppDBContext>(options => options.UseNpgsql(Environ
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TokenGenerator>();
 builder.Services.AddSingleton<AuthRabbit>();
+builder.Services.AddSingleton<Tracer>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_CONNECTION") != null ? Environment.GetEnvironmentVariable("REDIS_CONNECTION") : "localhost"));
 builder.Services.AddCustomAuthentication();
 
 builder.Services.AddAuthorization(options =>
@@ -55,8 +62,10 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     db.Database.Migrate();
 
-    var bus = app.Services.GetRequiredService<AuthRabbit>();
-    bus = new AuthRabbit(app.Services);
+	var tracer = app.Services.GetRequiredService<Tracer>();
+
+	var bus = app.Services.GetRequiredService<AuthRabbit>();
+	bus = new AuthRabbit(app.Services, tracer);
 }
 app.UseCors("AllowAllOrigins");
 

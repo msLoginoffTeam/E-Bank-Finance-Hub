@@ -10,6 +10,8 @@ services:
     environment:
       AUTH_DATABASE_CONNECTION: ${AUTH_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+      REDIS_CONNECTION: ${REDIS_CONNECTION}
+      FIREBASE_SECRET: ${FIREBASE_SECRET}
     networks:  
       - network
     depends_on:  
@@ -26,6 +28,7 @@ services:
     environment:
       CORE_DATABASE_CONNECTION: ${CORE_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+      REDIS_CONNECTION: ${REDIS_CONNECTION}
     networks:  
       - network
     depends_on:  
@@ -41,6 +44,7 @@ services:
     environment:
       CREDIT_DATABASE_CONNECTION: ${CREDIT_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+      REDIS_CONNECTION: ${REDIS_CONNECTION}
     networks:  
       - network
     depends_on:  
@@ -56,11 +60,28 @@ services:
     environment:
       USER_DATABASE_CONNECTION: ${USER_DATABASE_CONNECTION}
       RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+      REDIS_CONNECTION: ${REDIS_CONNECTION}
     networks:  
       - network
     depends_on:  
       - db
       - rabbitmq 
+
+  trace:    
+    build:  
+      context: . 
+      dockerfile: TraceDockerfile
+    ports:  
+      - "8084:8080"
+    environment:
+      TRACE_DATABASE_CONNECTION: ${TRACE_DATABASE_CONNECTION}
+      RABBITMQ_CONNECTION: ${RABBITMQ_CONNECTION}
+    networks:  
+      - network
+    depends_on:  
+      - db
+      - rabbitmq 
+    command: ["/wait-for-it.sh", "db:5432", "--", "dotnet", "TraceService.dll"]
 
   db:  
     image: postgres:latest
@@ -84,6 +105,15 @@ services:
       - "15672:15672" 
     networks:  
       - network
+  
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:  
+      - "6379:6379" 
+    networks:  
+      - network
+
 
 networks:  
   network:  
