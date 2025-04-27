@@ -117,7 +117,7 @@ namespace Core_Api.Services.Utils
             _employeeNotifications.Clear();
 
             EmployeeDeviceTokensResponse EmployeeDeviceTokens = _rabbit.RpcRequest<string, EmployeeDeviceTokensResponse>("", "EmployeeDeviceToken");
-            foreach (var EmployeeNotification in _employeeNotifications)
+            foreach (var EmployeeNotification in tmp)
             {
                 foreach (var EmployeeDeviceId in EmployeeDeviceTokens.DeviceTokens)
                 {
