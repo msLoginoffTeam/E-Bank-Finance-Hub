@@ -1,6 +1,3 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
-
 import {
   GET_CLIENT_ACCOUNT_OPERATIONS_ACTION_NAME,
   GET_CLIENT_ACCOUNTS_ACTION_NAME,
@@ -8,44 +5,22 @@ import {
 import { Account, Operation } from './AccountsStore.types';
 import { AccountsAPI } from './api';
 
-export const getClientAccounts = createAsyncThunk<
+import { createRetryableThunk } from '~/store/retryableThunk';
+
+export const getClientAccounts = createRetryableThunk<
   Omit<Account, 'operations'>[],
-  { accessToken: string; id: string },
-  { rejectValue: string }
+  { accessToken: string; id: string }
 >(
   GET_CLIENT_ACCOUNTS_ACTION_NAME,
-  async ({ accessToken, id }, { rejectWithValue }) => {
-    try {
-      return await AccountsAPI.getClientAccounts(accessToken, id);
-    } catch (e) {
-      console.log(e);
-
-      if (e instanceof AxiosError) {
-        return rejectWithValue(e.response?.data?.message);
-      }
-
-      return rejectWithValue('Произошла ошибка');
-    }
-  },
+  async ({ accessToken, id }, idempotencyKey) =>
+    AccountsAPI.getClientAccounts(accessToken, id, idempotencyKey),
 );
 
-export const getAccountOperations = createAsyncThunk<
+export const getAccountOperations = createRetryableThunk<
   Operation[],
-  { accessToken: string; id: string },
-  { rejectValue: string }
+  { accessToken: string; id: string }
 >(
   GET_CLIENT_ACCOUNT_OPERATIONS_ACTION_NAME,
-  async ({ accessToken, id }, { rejectWithValue }) => {
-    try {
-      return await AccountsAPI.getAccountOperations(accessToken, id);
-    } catch (e) {
-      console.log(e);
-
-      if (e instanceof AxiosError) {
-        return rejectWithValue(e.response?.data?.message);
-      }
-
-      return rejectWithValue('Произошла ошибка');
-    }
-  },
+  async ({ accessToken, id }, idempotencyKey) =>
+    AccountsAPI.getAccountOperations(accessToken, id, idempotencyKey),
 );
