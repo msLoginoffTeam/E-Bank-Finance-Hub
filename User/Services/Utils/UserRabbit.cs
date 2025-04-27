@@ -1,7 +1,6 @@
 ﻿using Common.Data.DTOs;
 using Common.ErrorHandling;
 using Common.Rabbit.DTOs.Responses;
-using EasyNetQ;
 using UserApi.Data.Models;
 using Common.Rabbit.DTOs.Requests;
 using Common.Trace;
@@ -96,9 +95,8 @@ namespace UserApi.Services.Utils
                 using (var scope = _serviceProvider.CreateScope())
                 {
 					var trace = _tracer.StartRequest(null, "RPC - ClientDeviceToken", $"Request: {ClientId}");
-
 					UserService UserService = scope.ServiceProvider.GetRequiredService<UserService>();
-
+					var ClientDeviceToken = UserService.GetClientDeviceToken(ClientId);
 					_tracer.EndRequest(trace.DictionaryId, success: true, 200);
 					return new ClientDeviceTokenResponse(UserService.GetClientDeviceToken(ClientId));
                 }
