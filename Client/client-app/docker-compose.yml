@@ -8,3 +8,30 @@ services:
     ports:
       - "3000:80"
     restart: unless-stopped
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ClientDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  userpreferences:
+    build:
+      context: ../..
+      dockerfile: Client/UserPreferences/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8088
+      - ConnectionStrings__ClientServiceContext=Host=db;Port=5432;Database=ClientDB;Username=postgres;Password=admin
+    ports:
+      - "8088:8088"
+      - "8089:8089"
+    depends_on:
+      - db
+
+volumes:
+  db-data:
