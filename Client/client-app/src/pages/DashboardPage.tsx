@@ -10,6 +10,7 @@ import {OpenAccountModal} from "../modals/OpenAccountModel.tsx";
 import {useCreditsQuery} from "../queries/credits.queries.ts";
 import {CreditCard} from "../components/credits/CreditCard.tsx";
 import {OpenCreditModal} from "../modals/OpenCreditModal.tsx";
+import {useUserQuery} from "../queries/accounts.queries.ts";
 
 export const DashboardPage = () => {
     const dispatch = useAppDispatch();
@@ -17,6 +18,8 @@ export const DashboardPage = () => {
     const token = useAppSelector((state) => state.auth.token);
     const { data: credits } = useCreditsQuery();
     const [openModal, setOpenModal] = useState(false);
+    const { data: userId } = useUserQuery();
+    localStorage.setItem('userId', userId);
 
     useEffect(() => {
         if (!token) navigate('/login');

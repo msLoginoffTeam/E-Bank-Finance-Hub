@@ -1,5 +1,5 @@
 import axiosInstance from '../api/axiosInstance';
-import { ACCOUNTS_API } from '../api/endpoints';
+import {ACCOUNTS_API, USER_API} from '../api/endpoints';
 
 export const AccountsStoreAPI = {
     getAccounts: async () => {
@@ -25,3 +25,10 @@ export const AccountsAPI = {
     withdraw: (accountId: string, amount: number) =>
         axiosInstance.post(`${ACCOUNTS_API}/account/${accountId}/cash`, { amount: -amount }),
 };
+
+export const UserAPI = {
+    getUserId: async () => {
+        const { data } = await axiosInstance.get(`${USER_API}/users/api/client/profile`);
+        return data.id;
+    }
+}

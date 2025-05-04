@@ -65,6 +65,7 @@ axiosInstance.interceptors.response.use(
                 console.log(refreshError);
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
+                localStorage.removeItem('userId');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
