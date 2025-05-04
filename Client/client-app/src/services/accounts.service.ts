@@ -7,8 +7,8 @@ export const AccountsStoreAPI = {
         return data;
     },
 
-    openAccount: async (accountName: string) => {
-        const { data } = await axiosInstance.post(`${ACCOUNTS_API}/accounts/open?Name=${accountName}`, accountName);
+    openAccount: async (accountName: string, currency: string) => {
+        const { data } = await axiosInstance.post(`${ACCOUNTS_API}/accounts/open`, {name: accountName, currency: currency});
         return data;
     },
 
@@ -20,7 +20,7 @@ export const AccountsStoreAPI = {
 
 export const AccountsAPI = {
     deposit: (accountId: string, amount: number, type: 'Income' | 'Outcome') =>
-        axiosInstance.post(`${ACCOUNTS_API}/account/${accountId}/cash`, { amountInRubles: amount, operationType: type }),
+        axiosInstance.post(`${ACCOUNTS_API}/account/${accountId}/cash`, { amount: amount, operationType: type }),
 
     withdraw: (accountId: string, amount: number) =>
         axiosInstance.post(`${ACCOUNTS_API}/account/${accountId}/cash`, { amount: -amount }),

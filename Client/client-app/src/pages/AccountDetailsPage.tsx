@@ -1,6 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {useAccountsQuery, useCloseAccountMutation} from '../queries/accounts.queries';
-import {Card, Stack, Title, Text, Button, Group, Modal, ScrollArea} from '@mantine/core';
+import {
+    Card,
+    Stack,
+    Title,
+    Text,
+    Button,
+    Group,
+    Modal,
+    ScrollArea,
+} from '@mantine/core';
 import { useState, useMemo } from 'react';
 import {useOperationsQuery} from "../queries/operations.queries.ts";
 
@@ -13,17 +22,14 @@ export const AccountDetailsPage = () => {
 
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
-    // Находим счет из общего списка
     const account = useMemo(() => accounts?.find((acc : any) => acc.id === accountId), [accounts, accountId]);
 
-    // Если счета нет, редиректим на дашборд
     if (isAccountsLoading || isOperationsLoading) return <p>Загрузка...</p>;
     if (!account) {
         navigate('/dashboard');
         return null;
     }
 
-    // Закрытие счета с подтверждением
     const handleCloseAccount = async () => {
         await closeAccountMutation.mutateAsync();
         setIsCloseModalOpen(false);
@@ -31,10 +37,9 @@ export const AccountDetailsPage = () => {
 
     return (
         <Stack>
-            {/* Информация о счете */}
             <Card shadow="lg" p="md">
                 <Title order={3}>Счет № {account.id}</Title>
-                <Text>Баланс: {account.balanceInRubles} ₽</Text>
+                <Text>Баланс: {account.balance} ₽</Text>
                 <Text color={!account.isClosed ? 'green' : 'red'}>
                     {!account.isClosed ? 'Открыт' : 'Закрыт'}
                 </Text>
@@ -46,7 +51,6 @@ export const AccountDetailsPage = () => {
                 )}
             </Card>
 
-            {/* История операций */}
             <Card shadow="lg" p="md" style={{ flex: 1 }}>
                 <Title order={3}>История операций</Title>
                 <ScrollArea style={{ height: "75vh" }}>
@@ -54,14 +58,13 @@ export const AccountDetailsPage = () => {
                     {operations.map((operation : any) => (
                         <Group key={operation.id}>
                             <span>{operation.operationType === 'Income' ? 'Пополнение' : 'Списание'}</span>
-                            <span>{operation.amountInRubles}₽</span>
+                            <span>{operation.amount}₽</span>
                         </Group>
                     ))}
                 </Stack>
                 </ScrollArea>
             </Card>
 
-            {/* Модалка подтверждения закрытия счета */}
             <Modal opened={isCloseModalOpen} onClose={() => setIsCloseModalOpen(false)} title="Подтвердите действие">
                 <Text>Вы уверены, что хотите закрыть этот счет? Это действие нельзя отменить.</Text>
                 <Group mt="md">

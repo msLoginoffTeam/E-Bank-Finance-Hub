@@ -18,9 +18,9 @@ export const useAccountsQuery = (limit?: number) => {
 };
 
 // Открываем новый счёт
-export const useOpenAccountMutation = (accountName: string) => {
+export const useOpenAccountMutation = (accountName: string, currency: string) => {
     return useMutation({
-        mutationFn: () =>  AccountsStoreAPI.openAccount(accountName),
+        mutationFn: () =>  AccountsStoreAPI.openAccount(accountName, currency),
         onSuccess: () => invalidateAccounts(),
     });
 };

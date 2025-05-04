@@ -38,7 +38,7 @@ export const LoginPage = () => {
     let refreshToken = params.get('refreshToken');
 
     if (!accessToken || !refreshToken) {
-        //window.location.href = 'http://localhost:8083?IsClient=true&returnUrl=http://localhost:5173/login';
+        window.location.href = 'http://localhost:8083?IsClient=true&returnUrl=http://localhost:3000/login';
     }
     else {
         localStorage.setItem('token', accessToken);

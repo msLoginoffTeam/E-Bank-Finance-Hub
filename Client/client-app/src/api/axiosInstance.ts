@@ -45,22 +45,27 @@ axiosInstance.interceptors.response.use(
                         },
                     }
                 );
-                console.log(refreshResponse?.data);
+
+                console.log(refreshResponse);
 
                 const newAccessToken = refreshResponse.data.accessToken;
                 const newRefreshToken = refreshResponse.data.refreshToken;
 
-                localStorage.setItem('token', newAccessToken);
-                localStorage.setItem('refreshToken', newRefreshToken);
+                if (!newRefreshToken) {
+                    return;
+                }
 
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+                localStorage.setItem('token', newAccessToken);
+                localStorage.setItem('refreshToken', newRefreshToken);
 
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
                 console.log(refreshError);
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
-                //window.location.href = '/login';
+                window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }
