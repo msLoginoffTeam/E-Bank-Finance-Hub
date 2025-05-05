@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {ModalTransaction} from "../../modals/ModalTransaction.tsx";
 import {useCloseAccountMutation} from "../../queries/accounts.queries.ts";
+import {currencyData, CurrencyEnum} from "../../types/currency.ts";
 
 export const AccountCard = ({ account, isHidden, onToggleHidden }: { account: any; isHidden?: boolean,
     onToggleHidden?: () => void, isDashboard?: boolean }) => {
@@ -24,6 +25,17 @@ export const AccountCard = ({ account, isHidden, onToggleHidden }: { account: an
 
     const disabled = isHidden;
 
+    let currency;
+    if (account.currency === currencyData[CurrencyEnum.Euro]) {
+        currency = '€';
+    }
+    else if (account.currency === currencyData[CurrencyEnum.Ruble]) {
+        currency = '₽'
+    }
+    else {
+        currency = '$'
+    }
+
     return (
         <Card mt={10} mb={10} shadow={'xs'} withBorder p="md" radius="lg" style={{ opacity: !account.isClosed ? 1 : 0.5 }}>
 
@@ -38,7 +50,7 @@ export const AccountCard = ({ account, isHidden, onToggleHidden }: { account: an
 
             <Group mt="xs">
                 <Text size="lg" style={{ flex: 1 }}>
-                    Баланс: {account.balance} ₽
+                    Баланс: {account.balance} {currency}
                 </Text>
             </Group>
 

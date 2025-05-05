@@ -12,13 +12,17 @@ import {
 } from '@mantine/core';
 import { useState, useMemo } from 'react';
 import {useOperationsQuery} from "../queries/operations.queries.ts";
+import {currencyData, CurrencyEnum} from "../types/currency.ts";
+import {useOperationsStream} from "../hooks/useOperationsStream.ts";
 
 export const AccountDetailsPage = () => {
     const { accountId } = useParams();
     const navigate = useNavigate();
     const { data: accounts, isLoading: isAccountsLoading } = useAccountsQuery();
-    const { data: operations, isLoading: isOperationsLoading } = useOperationsQuery(accountId!);
+    //const { data: operations, isLoading: isOperationsLoading } = useOperationsQuery(accountId!);
     const closeAccountMutation = useCloseAccountMutation(accountId!);
+    const { operations, isLoading: isOperationsLoading } =
+        useOperationsStream(accountId!);
 
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
@@ -35,11 +39,22 @@ export const AccountDetailsPage = () => {
         setIsCloseModalOpen(false);
     };
 
+    let currency;
+    if (account.currency === currencyData[CurrencyEnum.Euro]) {
+        currency = '€';
+    }
+    else if (account.currency === currencyData[CurrencyEnum.Ruble]) {
+        currency = '₽'
+    }
+    else {
+        currency = '$'
+    }
+
     return (
         <Stack>
             <Card shadow="lg" p="md">
                 <Title order={3}>Счет № {account.id}</Title>
-                <Text>Баланс: {account.balance} ₽</Text>
+                <Text>Баланс: {account.balance} {currency}</Text>
                 <Text color={!account.isClosed ? 'green' : 'red'}>
                     {!account.isClosed ? 'Открыт' : 'Закрыт'}
                 </Text>
@@ -58,7 +73,7 @@ export const AccountDetailsPage = () => {
                     {operations.map((operation : any) => (
                         <Group key={operation.id}>
                             <span>{operation.operationType === 'Income' ? 'Пополнение' : 'Списание'}</span>
-                            <span>{operation.amount}₽</span>
+                            <span>{operation.amount} {currency}</span>
                         </Group>
                     ))}
                 </Stack>
