@@ -1,6 +1,8 @@
 ﻿
 using Common.ErrorHandling;
 using Common.Rabbit.DTOs;
+using Common.Rabbit.DTOs.Requests;
+using Common.Trace;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 using User_Api.Data.Models;
@@ -14,10 +16,12 @@ namespace UserApi.Services
     {
         private readonly AppDBContext _context;
         private readonly UserRabbit _rabbit;
-        public UserService(AppDBContext context, UserRabbit rabbit)
+		private readonly Tracer _tracer;
+		public UserService(AppDBContext context, UserRabbit rabbit, Tracer tracer)
         {
             _context = context;
             _rabbit = rabbit;
+            _tracer = tracer;
         }
 
         public User GetUserById(Guid UserId)
@@ -64,14 +68,24 @@ namespace UserApi.Services
 
         public void SetRole(User User, Role Role)
         {
-            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager) && Role == Role.Employee) throw new ErrorException(403, "Пользователь не может быть одновременно менеджером и работником");
-            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role)) throw new ErrorException(403, "У пользователя уже есть такая роль");
+			var trace = _tracer.StartRequest(null, "UserService - SetRole", $"User: {User}, Role: {Role}");
+
+            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager) && Role == Role.Employee)
+            {
+				_tracer.EndRequest(trace.DictionaryId, false, 403, "Пользователь не может быть одновременно менеджером и работником");
+				throw new ErrorException(403, "Пользователь не может быть одновременно менеджером и работником");
+            }
+            if (User.Roles.Select(UserRole => UserRole.Role).Contains(Role))
+            {
+				_tracer.EndRequest(trace.DictionaryId, false, 403, "У пользователя уже есть такая роль");
+				throw new ErrorException(403, "У пользователя уже есть такая роль");
+            }
 
             User.Roles.Add(new UserRole(User, Role));
 
             if (Role == Role.Client)
             {
-                _rabbit._bus.PubSub.Publish(User.Id, "CreatedClientId");
+                _rabbit._bus.PubSub.Publish(new CreatedUserIdMessage() { ClientId = User.Id , TraceId = trace.TraceId}, "CreatedClientId");
                 _rabbit._bus.PubSub.Publish(new UserRoleAuthDTO()
                 {
                     Id = User.Id,
@@ -89,19 +103,22 @@ namespace UserApi.Services
 
             _context.Users.Update(User);
             _context.SaveChanges();
-        }
 
-        public void RegisterUser(User User, Role Role, string Password)
+			_tracer.EndRequest(trace.DictionaryId, true, 200, "Operated successfully");
+		}
+
+        public void RegisterUser(User User, Role Role, string Password, string TraceId)
         {
             if (Role == Role.Client)
             {
-                _rabbit._bus.PubSub.Publish(User.Id, "CreatedClientId");
+                _rabbit._bus.PubSub.Publish(new CreatedUserIdMessage() { ClientId = User.Id}, "CreatedClientId");
             }
             _rabbit._bus.PubSub.Publish(new UserAuthDTO()
             {
                 Id = User.Id,
                 Password = Password,
-                Role = Role.ToString()
+                Role = Role.ToString(),
+                TraceId = TraceId
             });
 
             _context.Users.Add(User);
@@ -120,6 +137,24 @@ namespace UserApi.Services
             User.IsBlocked = false;
             _context.Users.Update(User);
             _context.SaveChanges();
+        }
+
+        public void EditRoleUser(User User, List<Role> Roles)
+        {
+            User.Roles = Roles.Select(Role => new UserRole(User, Role)).ToList();
+
+            _context.Users.Update(User);
+            _context.SaveChanges();
+        }
+
+        public List<string> GetEmployeeDeviceTokens()
+        {
+            return _context.Users.Where(User => (User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Employee) || User.Roles.Select(UserRole => UserRole.Role).Contains(Role.Manager)) && User.DeviceToken != null).Select(User => User.DeviceToken!).ToList();
+        }
+
+        public string GetClientDeviceToken(Guid UserId)
+        {
+            return _context.Users.FirstOrDefault(User => User.Id == UserId)?.DeviceToken;
         }
     }
 }

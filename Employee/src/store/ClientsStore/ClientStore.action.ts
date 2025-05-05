@@ -1,6 +1,3 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
-
 import { ClientsAPI } from './api';
 import {
   GET_CLIENT_ACTION_NAME,
@@ -9,56 +6,23 @@ import {
 } from './ClientsStore.const';
 import { Client } from './ClientsStore.types';
 
-export const getClients = createAsyncThunk<
-  Client[],
-  string,
-  { rejectValue: string }
->(GET_CLIENTS_ACTION_NAME, async (accessToken, { rejectWithValue }) => {
-  try {
-    return await ClientsAPI.getClients(accessToken);
-  } catch (e) {
-    console.log(e);
+import { createRetryableThunk } from '~/store/retryableThunk';
 
-    if (e instanceof AxiosError) {
-      return rejectWithValue(e.response?.data?.message);
-    }
+export const getClients = createRetryableThunk<Client[], string>(
+  GET_CLIENTS_ACTION_NAME,
+  async (accessToken, idempotencyKey) =>
+    ClientsAPI.getClients(accessToken, idempotencyKey),
+);
 
-    return rejectWithValue('Произошла ошибка');
-  }
-});
-
-export const getClient = createAsyncThunk<
+export const getClient = createRetryableThunk<
   Client,
-  { accessToken: string; id: string },
-  { rejectValue: string }
->(GET_CLIENT_ACTION_NAME, async ({ accessToken, id }, { rejectWithValue }) => {
-  try {
-    return await ClientsAPI.getClientProfile(accessToken, id);
-  } catch (e) {
-    console.log(e);
+  { accessToken: string; id: string }
+>(GET_CLIENT_ACTION_NAME, async ({ accessToken, id }, idempotencyKey) =>
+  ClientsAPI.getClientProfile(accessToken, id, idempotencyKey),
+);
 
-    if (e instanceof AxiosError) {
-      return rejectWithValue(e.response?.data?.message);
-    }
-
-    return rejectWithValue('Произошла ошибка');
-  }
-});
-
-export const getEmployees = createAsyncThunk<
-  Client[],
-  string,
-  { rejectValue: string }
->(GET_EMPLOYEES_ACTION_NAME, async (accessToken, { rejectWithValue }) => {
-  try {
-    return await ClientsAPI.getEmployees(accessToken);
-  } catch (e) {
-    console.log(e);
-
-    if (e instanceof AxiosError) {
-      return rejectWithValue(e.response?.data?.message);
-    }
-
-    return rejectWithValue('Произошла ошибка');
-  }
-});
+export const getEmployees = createRetryableThunk<Client[], string>(
+  GET_EMPLOYEES_ACTION_NAME,
+  async (accessToken, idempotencyKey) =>
+    ClientsAPI.getEmployees(accessToken, idempotencyKey),
+);

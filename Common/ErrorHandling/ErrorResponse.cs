@@ -1,4 +1,6 @@
-﻿namespace Common.ErrorHandling
+﻿using Common.Rabbit.DTOs.Responses;
+
+namespace Common.ErrorHandling
 {
     public class ErrorResponse
     {
@@ -18,6 +20,12 @@
         {
             status = ErrorException.status;
             message = ErrorException.message;
+        }
+
+        public ErrorResponse(RabbitResponse ErrorResponse)
+        {
+            status = ErrorResponse.status;
+            message = ErrorResponse.message;
         }
     }
 }

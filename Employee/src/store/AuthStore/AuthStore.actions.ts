@@ -16,6 +16,8 @@ import {
   LoginResponse,
 } from './AuthStore.types';
 
+import { createRetryableThunk } from '~/store/retryableThunk';
+
 export const loginEmployee = createAsyncThunk<
   LoginResponse,
   AuthCredentials,
@@ -24,6 +26,7 @@ export const loginEmployee = createAsyncThunk<
   try {
     return await AuthAPI.login(id);
   } catch (e) {
+    console.log(e);
 
     if (e instanceof AxiosError) {
       return rejectWithValue(e.response?.data?.message);
@@ -33,81 +36,32 @@ export const loginEmployee = createAsyncThunk<
   }
 });
 
-export const createUser = createAsyncThunk<
+export const createUser = createRetryableThunk<
   void,
-  CreateUser,
-  { rejectValue: string }
->(CREATE_USER_ACTION_NAME, async (data, { rejectWithValue }) => {
-  try {
-    await AuthAPI.register(data);
-  } catch (e) {
-
-    if (e instanceof AxiosError) {
-      return rejectWithValue(
-        e.response?.data?.message || e.response?.data?.errors.FullName,
-      );
-    }
-
-    return rejectWithValue('Произошла ошибка');
-  }
-});
-
-export const getEmployeeProfile = createAsyncThunk<
-  EmployeeProfile,
-  { accessToken: string; id: string },
-  { rejectValue: string }
->(
-  GET_EMPLOYEE_PROFILE_ACTION_NAME,
-  async ({ accessToken, id }, { rejectWithValue }) => {
-    try {
-      return await AuthAPI.getEmployeeProfile(accessToken, id);
-    } catch (e) {
-      console.log(e);
-
-      if (e instanceof AxiosError) {
-        return rejectWithValue(e.response?.data?.message);
-      }
-
-      return rejectWithValue('Произошла ошибка');
-    }
-  },
+  { accessToken: string; userData: CreateUser }
+>(CREATE_USER_ACTION_NAME, async ({ accessToken, userData }, idempotencyKey) =>
+  AuthAPI.register(accessToken, userData, idempotencyKey),
 );
 
-export const blockUser = createAsyncThunk<
-  void,
-  { accessToken: string; id: string },
-  { rejectValue: string }
->(BLOCK_USER_ACTION_NAME, async ({ accessToken, id }, { rejectWithValue }) => {
-  try {
-    await AuthAPI.blockUser(accessToken, id);
-  } catch (e) {
-    console.log(e);
-
-    if (e instanceof AxiosError) {
-      return rejectWithValue(e.response?.data?.message || 'Произошла ошибка');
-    }
-
-    return rejectWithValue('Произошла ошибка');
-  }
-});
-
-export const unblockUser = createAsyncThunk<
-  void,
-  { accessToken: string; id: string },
-  { rejectValue: string }
+export const getEmployeeProfile = createRetryableThunk<
+  EmployeeProfile,
+  { accessToken: string; id: string }
 >(
-  UNBLOCK_USER_ACTION_NAME,
-  async ({ accessToken, id }, { rejectWithValue }) => {
-    try {
-      await AuthAPI.unblockUser(accessToken, id);
-    } catch (e) {
-      console.log(e);
+  GET_EMPLOYEE_PROFILE_ACTION_NAME,
+  async ({ accessToken, id }, idempotencyKey) =>
+    AuthAPI.getEmployeeProfile(accessToken, id, idempotencyKey),
+);
 
-      if (e instanceof AxiosError) {
-        return rejectWithValue(e.response?.data?.message || 'Произошла ошибка');
-      }
+export const blockUser = createRetryableThunk<
+  void,
+  { accessToken: string; id: string }
+>(BLOCK_USER_ACTION_NAME, async ({ accessToken, id }, idempotencyKey) =>
+  AuthAPI.blockUser(accessToken, id, idempotencyKey),
+);
 
-      return rejectWithValue('Произошла ошибка');
-    }
-  },
+export const unblockUser = createRetryableThunk<
+  void,
+  { accessToken: string; id: string }
+>(UNBLOCK_USER_ACTION_NAME, async ({ accessToken, id }, idempotencyKey) =>
+  AuthAPI.unblockUser(accessToken, id, idempotencyKey),
 );

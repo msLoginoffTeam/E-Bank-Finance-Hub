@@ -6,25 +6,31 @@ import { Operation } from '~/store/AccountsStore';
 
 export const OperationItem = ({
   operationType,
-  amountInRubles,
+  amount,
   operationCategory,
   time,
-}: Omit<Operation, 'creditId'>) => {
+  isSuccessful,
+}: Omit<Operation, 'creditId'> & { isSuccessful?: boolean | null }) => {
   return (
     <Card padding="md" radius="xl" withBorder>
       <Stack gap="xs">
-        <Group>
-          <Text fz="sm" c="dimmed">
-            {operationType === 'Outcome' ? 'Списание:' : 'Пополнение:'}
-          </Text>
-          <Text
-            c={
-              amountInRubles < 0 || operationType === 'Outcome' ? 'red' : 'teal'
-            }
-            style={{ wordBreak: 'break-all' }}
-          >
-            {`${amountInRubles} ₽`}
-          </Text>
+        <Group justify="space-between">
+          <Group>
+            <Text fz="sm" c="dimmed">
+              {operationType === 'Outcome' ? 'Списание:' : 'Пополнение:'}
+            </Text>
+            <Text
+              c={amount < 0 || operationType === 'Outcome' ? 'red' : 'teal'}
+              style={{ wordBreak: 'break-all' }}
+            >
+              {`${amount} ₽`}
+            </Text>
+          </Group>
+          {isSuccessful === false && (
+            <Badge color="red" radius="sm">
+              Просрочено
+            </Badge>
+          )}
         </Group>
         <Text fz="sm" c="dimmed">
           {format(new Date(time), 'dd MMMM yyyy, HH:mm', {

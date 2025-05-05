@@ -1,7 +1,10 @@
 ﻿using Common.ErrorHandling;
+using Common.Rabbit;
+using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data;
 using Core.Data.Models;
-using Core_Api.Data.DTOs.Requests;
+using Core.Services.Utils;
 using EasyNetQ;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +13,11 @@ namespace Core.Services
     public class AccountService
     {
         private readonly AppDBContext _context;
-        private readonly IBus _bus;
-        public AccountService(AppDBContext context)
+        private readonly CoreRabbit _rabbit;
+        public AccountService(AppDBContext context, CoreRabbit rabbit)
         {
             _context = context;
-            _bus = RabbitHutch.CreateBus("host=rabbitmq");
+            _rabbit = rabbit;
         }
 
         public Client GetClient(Guid ClientId)
@@ -71,7 +74,7 @@ namespace Core.Services
 
         public List<Account> GetAccounts(Guid ClientId)
         {
-            return _context.Accounts.Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
+            return _context.Accounts.Include(a => a.Client).Where(Account => Account.Client.Id == ClientId).Include(Account => Account.Client).ToList();
         }
 
         public void CreateClient(Guid ClientId)
@@ -86,11 +89,11 @@ namespace Core.Services
             _context.SaveChanges();
         }
 
-        public void CloseAccount(Account Account)
+        public void CloseAccount(Account Account, string TraceId)
         {
-            var AccountHaveCredit = _bus.Rpc.Request<Guid, bool>(Account.Id, x => x.WithQueueName("AccountCreditCheck"));
+            var CreditCheckResponse = _rabbit.RpcRequest<CreditCheckDTO, CreditCheckResponse>(new CreditCheckDTO() { AccountId = Account.Id, TraceId = TraceId }, QueueName: "CreditCheck");
 
-            if (!AccountHaveCredit)
+            if (CreditCheckResponse.status == 404)
             {
                 Account.IsClosed = true;
                 _context.SaveChanges();

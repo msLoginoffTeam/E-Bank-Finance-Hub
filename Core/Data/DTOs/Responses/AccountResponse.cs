@@ -14,6 +14,7 @@ namespace Core.Data.DTOs.Responses
 
         public bool IsClosed { get; set; }
 
+
         public AccountResponse(Account Account)
         {
             Id = Account.Id;

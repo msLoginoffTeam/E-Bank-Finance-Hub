@@ -25,7 +25,19 @@ export const login = async (
   return data;
 };
 
-export const register = async (data: CreateUser): Promise<void> => {
+export const register = async (
+  accessToken: string,
+  data: CreateUser,
+  idempotencyKey?: string,
+): Promise<void> => {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
   await axiosInstance.post<void>(
     REGISTER(data.userRole),
     {
@@ -35,6 +47,7 @@ export const register = async (data: CreateUser): Promise<void> => {
     },
     {
       baseURL: `${BASE_URL}:8082`,
+      headers,
     },
   );
 };
@@ -42,14 +55,21 @@ export const register = async (data: CreateUser): Promise<void> => {
 export const getEmployeeProfile = async (
   accessToken: string,
   id: string,
+  idempotencyKey?: string,
 ): Promise<EmployeeProfile> => {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
   const { data } = await axiosInstance.get<EmployeeProfile>(
     `${GET_EMPLOYEE_PROFILE}?ClientId=${id}`,
     {
       baseURL: `${BASE_URL}:8082`,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
     },
   );
 
@@ -59,15 +79,22 @@ export const getEmployeeProfile = async (
 export const blockUser = async (
   accessToken: string,
   id: string,
+  idempotencyKey?: string,
 ): Promise<void> => {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
   await axiosInstance.post<void>(
     BLOCK_USER(id),
     {},
     {
       baseURL: `${BASE_URL}:8082`,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
     },
   );
 };
@@ -75,15 +102,22 @@ export const blockUser = async (
 export const unblockUser = async (
   accessToken: string,
   id: string,
+  idempotencyKey?: string,
 ): Promise<void> => {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
   await axiosInstance.post<void>(
     UNBLOCK_USER(id),
     {},
     {
       baseURL: `${BASE_URL}:8082`,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
     },
   );
 };

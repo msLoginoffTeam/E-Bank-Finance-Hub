@@ -17,12 +17,13 @@ public interface ICreditService
     Task<CreditPlanListResponseDTO> GetCreditPlanListAsync(string Role, int ElementsNumber, int PageNumber);
     Task<CreditPlanResponse> CreateCreditPlanAsync(CreateCreditPlanRequestDTO NewPlanData);
     Task<Guid> CloseCreditPlanAsync(Guid CreditPlanId);
-    Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData);
-    Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData);
+    Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData, string TraceId);
+	Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData, string TraceId);
+    Task<RatingResponseDTO> GetRatingAsync(Guid ClientId, string TraceId);
 
 
 
-    Task PayOffTheLoanAutomaticAsync();
+    Task PayOffTheLoanAutomaticAsync(string TraceId);
     Task PercentAsync();
     Task<ClientCreditDbModel> GetCredit(Guid CreditId);
     bool CheckIfHaveActiveCreditAsync(Guid AccountId);

@@ -4,7 +4,6 @@ using Core.Data.DTOs.Responses;
 using Core.Data.Models;
 using Core.Services;
 using Fleck;
-using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
@@ -13,7 +12,7 @@ namespace Core_Api.Services.Utils
     public class WebSocketServerManager
     {
         private WebSocketServer _server { get; set; }
-        private List<ClientOperationsBroadcast> _clients { get; set; }
+        private static List<ClientOperationsBroadcast> _clients { get; set; }
 
         private readonly IServiceProvider _serviceProvider;
         private AuthenticationConfiguration Configuration { get; set; }
@@ -33,10 +32,11 @@ namespace Core_Api.Services.Utils
             {
                 Socket.OnOpen = () =>
                 {
-                    var User = AuthenticationExtensions.ValidateToken(Socket.ConnectionInfo.Headers["Authorization"].Substring(7), Configuration);
+                    var Params = Socket.ConnectionInfo.Path.Substring(1).Split('&');
+                    var User = AuthenticationExtensions.ValidateToken(Params[0].Substring(6), Configuration);
                     if (User == null) throw new ErrorException(401, "Аутентификация не прошла, передайте валидный токен");
 
-                    Guid AccountId = new Guid(Socket.ConnectionInfo.Path.Substring(1));
+                    Guid AccountId = new Guid(Params[1].Substring(10));
                     Guid UserId = new Guid(User.Claims.ToList().First().Value);
                     string Role = User.Claims.ToList()[2].Value;
 
@@ -102,9 +102,11 @@ namespace Core_Api.Services.Utils
 
                 Socket.OnClose = () =>
                 {
-                    var User = AuthenticationExtensions.ValidateToken(Socket.ConnectionInfo.Headers["Authorization"].Substring(7), Configuration);
+                    var Params = Socket.ConnectionInfo.Path.Substring(1).Split('&');
+                    var User = AuthenticationExtensions.ValidateToken(Params[0].Substring(6), Configuration);
+                    if (User == null) throw new ErrorException(401, "Аутентификация не прошла, передайте валидный токен");
 
-                    Guid AccountId = new Guid(Socket.ConnectionInfo.Path.Substring(1));
+                    Guid AccountId = new Guid(Params[1].Substring(10));
                     Guid UserId = new Guid(User.Claims.ToList().First().Value);
                     string Role = User.Claims.ToList()[2].Value;
 
@@ -121,7 +123,35 @@ namespace Core_Api.Services.Utils
             });
         }
 
-        public List<IWebSocketConnection>? GetBroadcast(Guid AccountId)
+        public static void Send(Operation Operation)
+        {
+            object OperationResponse;
+            var Sockets = new List<IWebSocketConnection>();
+
+            if (Operation is TransferOperation TransferOperation)
+            {
+                OperationResponse = new TransferOperationResponse(TransferOperation);
+                Sockets.AddRange(GetBroadcast(TransferOperation.SenderAccount.Id) ?? new List<IWebSocketConnection>());
+            }
+            else if (Operation is CreditOperation CreditOperation)
+            {
+                OperationResponse = new CreditOperationResponse(CreditOperation);
+            }
+            else
+            {
+                OperationResponse = new CashOperationResponse(Operation as CashOperation);
+            }
+            Sockets.AddRange(GetBroadcast(Operation.TargetAccount.Id) ?? new List<IWebSocketConnection>());
+
+            var Response = JsonSerializer.Serialize(OperationResponse, new JsonSerializerOptions()
+            {
+                Converters = { new JsonStringEnumConverter() }
+            });
+
+            Sockets?.ForEach(Socket => Socket.Send(Response));
+        }
+
+        public static List<IWebSocketConnection>? GetBroadcast(Guid AccountId)
         {
             return _clients.FirstOrDefault(OperationBroadcast => OperationBroadcast.AccountId == AccountId)?.Receivers;
         }

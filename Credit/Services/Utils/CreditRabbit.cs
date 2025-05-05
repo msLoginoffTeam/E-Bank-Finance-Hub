@@ -1,23 +1,46 @@
-﻿using CreditService_Patterns.IServices;
+﻿using Common.Rabbit.DTOs.Requests;
+using Common.Rabbit.DTOs.Responses;
+using Common.Trace;
+using CreditService_Patterns.IServices;
 using EasyNetQ;
 
 namespace CreditService_Patterns.Services.Utils
 {
     public class CreditRabbit : Common.Rabbit.RabbitMQ
     {
-        public CreditRabbit(IServiceProvider serviceProvider) : base(serviceProvider) { }
+        Tracer _tracer;
+        public CreditRabbit(IServiceProvider serviceProvider, Tracer tracer) : base(serviceProvider) 
+        {
+			_tracer = tracer;
+        }
 
         public override void Configure()
         {
-            _bus.Rpc.Respond<Guid, bool>(AccountId =>
+            RpcRespond<CreditCheckDTO, CreditCheckResponse>(request =>
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var CreditService = scope.ServiceProvider.GetRequiredService<ICreditService>();
+                    string traceId = request.TraceId;
+                    var trace = _tracer.StartRequest(traceId, "RPC - CreditCheck", $"Request: {request.AccountId}");
 
-                    return CreditService.CheckIfHaveActiveCreditAsync(AccountId);
+					var CreditService = scope.ServiceProvider.GetRequiredService<ICreditService>();
+
+                    if (CreditService.CheckIfHaveActiveCreditAsync(request.AccountId))
+                    {
+						_tracer.EndRequest(trace.DictionaryId, success: false, 404, "На счет не привязан кредит");
+						return new CreditCheckResponse() { status = 404, message = "На счет не привязан кредит" };
+                    }
+                    else
+                    {
+						_tracer.EndRequest(trace.DictionaryId, success: true, 200);
+						return new CreditCheckResponse()
+                        {
+                            status = 200,
+                            message = ""
+                        };
+                    }
                 }
-            }, configure: x => x.WithQueueName("AccountCreditCheck"));
+            }, QueueName: "CreditCheck");
         }
     }
 }

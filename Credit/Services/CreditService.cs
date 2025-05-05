@@ -1,7 +1,6 @@
-﻿using Common.ErrorHandling;
+﻿using Common.Models;
 using Common.Rabbit.DTOs.Requests;
-using Core.Data.DTOs.Requests;
-using Core.Data.DTOs.Responses;
+using Common.Rabbit.DTOs.Responses;
 using Core.Data.Models;
 using Credit_Api.Models.innerModels;
 using Credit_Api.Models.responseModels;
@@ -15,6 +14,7 @@ using EasyNetQ;
 using hitscord_net.Models.DBModels;
 using hitscord_net.Models.requestModels;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace CreditService_Patterns.Services;
 
@@ -23,9 +23,10 @@ public class CreditService : ICreditService
     private readonly CreditServiceContext _creditContext;
     private readonly CreditRabbit _rabbit;
 
-    public CreditService(CreditServiceContext creditContext)
+    public CreditService(CreditServiceContext creditContext, CreditRabbit rabbit)
     {
         _creditContext = creditContext ?? throw new ArgumentNullException(nameof(creditContext));
+        _rabbit = rabbit;
     }
 
     public async Task<ClientCreditsListForClientResponseDTO> GetCreditsListClientAsync(Guid ClientId, ClientCreditStatusEnum? Status, int ElementsNumber, int PageNumber)
@@ -358,7 +359,7 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData)
+    public async Task<Guid> GetCreditAsync(Guid ClientId, GetCreditRequestDTO NewCreditData, string TraceId)
     {
         try
         {
@@ -378,11 +379,8 @@ public class CreditService : ICreditService
             }
 
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
-            {
-                var AccountExists = await bus.Rpc.RequestAsync<(Guid AccountId, Guid ClientId), bool>((NewCreditData.AccountId, ClientId), x => x.WithQueueName("AccountExistCheck"));
-                if (!AccountExists) throw new CustomException($"Account with {NewCreditData.AccountId} doesn't exist.", "Get credit", "AccountId", 400);
-            }
+            RabbitResponse RabbitResponse = _rabbit.RpcRequest<AccountExistRequest, RabbitResponse>(new AccountExistRequest(NewCreditData.AccountId, ClientId, TraceId), QueueName: "AccountExistCheck");
+            if (RabbitResponse.status != 200) throw new CustomException(RabbitResponse);
 
             var newCredit = new ClientCreditDbModel
             {
@@ -398,17 +396,17 @@ public class CreditService : ICreditService
             await _creditContext.Credit.AddAsync(newCredit);
             await _creditContext.SaveChangesAsync();
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            var request = new CreditOperationRequest
             {
-                var request = new CreditOperationRequest
-                {
-                    CreditId = newCredit.Id,
-                    Amount = newCredit.Amount,
-                    OperationType = OperationType.Income.ToString()
-                };
-
-                await bus.PubSub.PublishAsync<((Guid, Guid), CreditOperationRequest)>(((newCredit.AccountId, newCredit.ClientId), request));
-            }
+                AccountId = newCredit.AccountId,
+                ClientId = newCredit.ClientId,
+                CreditId = newCredit.Id,
+                Amount = newCredit.Amount,
+                OperationType = OperationType.Income.ToString(),
+                IdempotencyKey = Guid.NewGuid(),
+                TraceId = TraceId
+            };
+            var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
             return newCredit.Id;
         }
@@ -422,7 +420,7 @@ public class CreditService : ICreditService
         }
     }
 
-    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData)
+    public async Task<PayOffTheLoanResultResponseDTO> PayOffTheLoanAsync(Guid ClientId, PayOffTheLoanRequestDTO paymentData, string TraceId)
     {
         try
         {
@@ -441,21 +439,23 @@ public class CreditService : ICreditService
                 AccountId = paymentData.AccountId
             };
 
-            using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
+            var request = new CreditOperationRequest
             {
-                var request = new CreditOperationRequest
-                {
-                    CreditId = credit.Id,
-                    Amount = newPayment.PaymentAmount,
-                    OperationType = OperationType.Outcome.ToString()
-                };
+                AccountId = paymentData.AccountId,
+                ClientId = ClientId,
+                CreditId = credit.Id,
+                Amount = newPayment.PaymentAmount,
+                OperationType = OperationType.Outcome.ToString(),
+                Type = Common.Models.CreditOperationType.ByUser,
+                IdempotencyKey = Guid.NewGuid(),
+                TraceId = TraceId
+            };
 
-                var response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((paymentData.AccountId, ClientId), request));
+            var response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
-                if (response != null)
-                {
-                    throw new CustomException(response.message, "", "", response.status);
-                }
+            if (response != null)
+            {
+                throw new CustomException(response.message, "", "", response.status);
             }
 
             credit.RemainingAmount -= newPayment.PaymentAmount;
@@ -493,7 +493,7 @@ public class CreditService : ICreditService
 
 
 
-    public async Task PayOffTheLoanAutomaticAsync()
+    public async Task PayOffTheLoanAutomaticAsync(string TraceId)
     {
         try
         {
@@ -505,7 +505,7 @@ public class CreditService : ICreditService
                 {
                     credit.Status = ClientCreditStatusEnum.Expired;
                 }
-                ErrorResponse? response;
+                RabbitResponse? response;
 
                 int PaymentAmount = (int)(credit.Status == ClientCreditStatusEnum.Expired
                     ?
@@ -517,17 +517,19 @@ public class CreditService : ICreditService
 
                 var request = new CreditOperationRequest
                 {
+                    AccountId = credit.AccountId,
+                    ClientId = credit.ClientId,
                     CreditId = credit.Id,
                     Amount = PaymentAmount,
-                    OperationType = OperationType.Outcome.ToString()
+                    OperationType = OperationType.Outcome.ToString(),
+                    Type = Common.Models.CreditOperationType.Automatic,
+                    IdempotencyKey = Guid.NewGuid(),
+                    TraceId = TraceId
                 };
 
-                using (var bus = RabbitHutch.CreateBus("host=rabbitmq"))
-                {
-                    response = await bus.Rpc.RequestAsync<((Guid, Guid), CreditOperationRequest), ErrorResponse?>(((credit.AccountId, credit.ClientId), request));
-                }
+                response = _rabbit.RpcRequest<RabbitOperationRequest, RabbitResponse>(request, QueueName: "Operations");
 
-                if (response != null)
+                if (response.status != 200)
                 {
                     credit.Status = credit.Status == ClientCreditStatusEnum.Expired ? ClientCreditStatusEnum.Expired : ClientCreditStatusEnum.DoublePercentage;
                     _creditContext.Credit.Update(credit);
@@ -634,5 +636,21 @@ public class CreditService : ICreditService
         {
             throw new Exception(ex.Message);
         }
+    }
+
+    public async Task<RatingResponseDTO> GetRatingAsync(Guid ClientId, string TraceId)
+    {
+        var rating = new RatingResponseDTO
+        {
+            ClientId = ClientId,
+            Rating = 0
+        };
+        var response = _rabbit.RpcRequest<GetRatingRequest, GetRatingResponse>(new GetRatingRequest() { ClientId = ClientId, TraceId = TraceId }, QueueName: "GetRating");
+        if (response.status != 200)
+        {
+            throw new CustomException(response);
+        }
+        rating.Rating = response.Rating;
+        return rating;
     }
 }

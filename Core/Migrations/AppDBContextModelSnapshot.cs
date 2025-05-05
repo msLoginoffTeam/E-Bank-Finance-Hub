@@ -56,7 +56,7 @@ namespace Core_Api.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("ffa09d4d-ba75-4382-84fd-453cdf7323ce"),
+                            Id = new Guid("38209f7c-c1c8-4f9c-a528-8968d92cd3fc"),
                             Balance = 1000000000,
                             ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
                             Currency = 0,
@@ -65,7 +65,7 @@ namespace Core_Api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("cedf298f-65cd-496e-a1ef-75de39dc0891"),
+                            Id = new Guid("707e33f3-08d9-4a6b-aaee-5775871d3e10"),
                             Balance = 10000000,
                             ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
                             Currency = 1,
@@ -74,7 +74,7 @@ namespace Core_Api.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6b1f2247-f43d-44d7-be26-4c458055b7cd"),
+                            Id = new Guid("e57994f6-faf1-427b-9066-37a8986fd309"),
                             Balance = 10000000,
                             ClientId = new Guid("00000000-0000-0000-0000-000000000000"),
                             Currency = 2,
@@ -88,6 +88,9 @@ namespace Core_Api.Migrations
                     b.Property<Guid?>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -162,6 +165,12 @@ namespace Core_Api.Migrations
 
                     b.Property<Guid>("CreditId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool?>("IsSuccessful")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("integer");
 
                     b.HasDiscriminator().HasValue(0);
                 });

@@ -1,4 +1,5 @@
-﻿using Core.Data.DTOs.Requests;
+﻿using Common.Models;
+using Core.Data.DTOs.Requests;
 using Core.Data.Models;
 
 namespace Core.Data.DTOs.Responses
@@ -30,9 +31,13 @@ namespace Core.Data.DTOs.Responses
     public class CreditOperationResponse : OperationResponse
     {
         public Guid CreditId { get; set; }
+        public CreditOperationType? Type { get; set; }
+        public bool? IsSuccessful { get; set; }
         public CreditOperationResponse(CreditOperation CreditOperation) : base(CreditOperation)
         {
             CreditId = CreditOperation.CreditId;
+            Type = CreditOperation.Type;
+            IsSuccessful = CreditOperation.IsSuccessful;
         }
     }
 

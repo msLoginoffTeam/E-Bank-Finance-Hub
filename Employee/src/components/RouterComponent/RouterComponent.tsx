@@ -5,6 +5,7 @@ import { ClientDetails } from '~/modules/ClientDetails';
 import { ClientsList } from '~/modules/ClientsList';
 import { Credits } from '~/modules/Credits';
 import { Dashboard } from '~/modules/Dashboard';
+import { Redirect } from '~/modules/Redirect';
 import { Users } from '~/modules/Users';
 import { PrivateRoute } from '~/providers/PrivateRoute';
 
@@ -52,6 +53,7 @@ export const RouterComponent = () => {
           </PrivateRoute>
         }
       />
+      <Route path="/bank" element={<Redirect />} />
     </Routes>
   );
 };

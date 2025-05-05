@@ -1,5 +1,5 @@
 import { notifications } from '@mantine/notifications';
-import { Check, X } from 'lucide-react';
+import { Check, MessageSquare, X } from 'lucide-react';
 
 // Хук для показа уведомлений
 export function useNotification() {
@@ -26,5 +26,17 @@ export function useNotification() {
     });
   };
 
-  return { showSuccess, showError };
+  const showMessage = (title: string, message: string) => {
+    notifications.show({
+      title,
+      message,
+      position: 'top-right',
+      color: 'yellow',
+      radius: 'md',
+      autoClose: 2000,
+      icon: <MessageSquare />,
+    });
+  };
+
+  return { showSuccess, showError, showMessage };
 }

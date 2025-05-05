@@ -4,6 +4,7 @@ export type {
   ClientCreditForEmployeeResponse,
   Pagination,
   Payment,
+  RatingResponse,
 } from './CreditsStore.types';
 
 export { CreditStatus, ClientCreditStatus } from './CreditsStore.types';
@@ -14,6 +15,7 @@ export {
   getClientCredits,
   closeCreditPlan,
   getClientCreditHistory,
+  getCreditRating,
 } from './CreditsStore.action';
 
-export { CreditsReducer } from './CreditsStore.reducer';
+export { CreditsReducer, setPayment } from './CreditsStore.reducer';

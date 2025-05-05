@@ -75,12 +75,12 @@ export const CreditItem = ({
         </Group>
         <Group>
           <Text c="dimmed">Статус кредита:</Text>
-          <Badge>
+          <Badge color={status === ClientCreditStatus.Expired ? 'red' : 'blue'}>
             {status === ClientCreditStatus.Closed && 'Закрыт'}
             {status === ClientCreditStatus.Open && 'Открыт'}
             {status === ClientCreditStatus.DoublePercentage &&
               'Двойной процент'}
-            {status === ClientCreditStatus.Expired && 'Истёк'}
+            {status === ClientCreditStatus.Expired && 'Просрочен'}
           </Badge>
         </Group>
         <Button
