@@ -8,6 +8,7 @@ export const useOperationsQuery = (accountId: string | null, limit?: number) => 
         queryFn: accountId ? () => OperationsAPI.getOperations(accountId) : async () => [],
         enabled: !!accountId,
         select: (data) => data ?? [],
+        staleTime: 1000 * 60 * 5
     });
 };
 
