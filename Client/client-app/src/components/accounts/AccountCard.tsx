@@ -1,10 +1,11 @@
-import {Card, Text, Button, Group, Modal} from '@mantine/core';
+import {Card, Text, Button, Group, Modal, CloseIcon, ActionIcon} from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {ModalTransaction} from "../../modals/ModalTransaction.tsx";
 import {useCloseAccountMutation} from "../../queries/accounts.queries.ts";
 
-export const AccountCard = ({ account }: { account: any; isDashboard?: boolean }) => {
+export const AccountCard = ({ account, isHidden, onToggleHidden }: { account: any; isHidden?: boolean,
+    onToggleHidden?: () => void, isDashboard?: boolean }) => {
     const [isModalOpen, setModalOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<'deposit' | 'withdraw'>('deposit');
     const navigate = useNavigate();
@@ -21,9 +22,26 @@ export const AccountCard = ({ account }: { account: any; isDashboard?: boolean }
         setIsCloseModalOpen(false);
     };
 
+    const disabled = isHidden;
+
     return (
-        <Card shadow="lg" p="md" radius="lg" style={{ opacity: !account.isClosed ? 1 : 0.5 }}>
-            <Text size="lg">Баланс: {account.balance} ₽</Text>
+        <Card mt={10} mb={10} shadow={'xs'} withBorder p="md" radius="lg" style={{ opacity: !account.isClosed ? 1 : 0.5 }}>
+
+            <ActionIcon
+                variant="subtle"
+                size="lg"
+                onClick={onToggleHidden}
+                style={{ position: 'absolute', top: 8, right: 8 }}
+            >
+                {isHidden ? <CloseIcon /> : <CloseIcon />}
+            </ActionIcon>
+
+            <Group mt="xs">
+                <Text size="lg" style={{ flex: 1 }}>
+                    Баланс: {account.balance} ₽
+                </Text>
+            </Group>
+
             <Text size="sm" color="dimmed">{account.name}</Text>
             <Text size="sm" color="dimmed">Счет №{account.id}</Text>
             {!account.isClosed && (

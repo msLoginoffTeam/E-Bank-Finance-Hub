@@ -1,8 +1,9 @@
 import { MantineProvider, useMantineColorScheme, ColorSchemeScript, createTheme } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import '@mantine/core/styles.css';                    // глобальные стили и CSS-переменные
-import './global.css';                                 // ваш CSS для body или data-* атрибутов
-import { AppRouter } from './router';
+import '@mantine/core/styles.css';
+import './global.css';
+import {useUserTheme} from "./hooks/useUserTheme.ts";
+import {AppRouter} from "./router";
 
 const themeOverrides = createTheme({
     primaryColor: 'blue',
@@ -10,12 +11,11 @@ const themeOverrides = createTheme({
 });
 
 export function App() {
-    const [scheme, setScheme] = useLocalStorage<'light'|'dark'|'auto'>({
+    const [scheme, setScheme] = useLocalStorage<'light'|'dark'>({
         key: 'mantine-color-scheme',
         defaultValue: 'light',
         getInitialValueInEffect: true,
     });
-
     return (
         <>
             <ColorSchemeScript defaultColorScheme="light" />
@@ -24,13 +24,14 @@ export function App() {
                 defaultColorScheme={scheme}
                 colorSchemeManager={{
                     get:    () => scheme,
-                    set:    (val) => setScheme(val),
+                    set:    (val) => setScheme(val === 'dark' ? 'dark' : 'light'),
                     subscribe:    () => {},
                     unsubscribe:  () => {},
-                    clear:  () => setScheme('dark'),
+                    clear:  () => setScheme('light'),
                 }}
                 theme={themeOverrides}
             >
+                <AppRouter />
                 <AppContent />
             </MantineProvider>
         </>
@@ -38,15 +39,15 @@ export function App() {
 }
 
 function AppContent() {
-    const { colorScheme, setColorScheme, toggleColorScheme, clearColorScheme } = useMantineColorScheme();
+    const { colorScheme, toggle } = useUserTheme();
 
     return (
         <>
-            <button onClick={() => toggleColorScheme()}>
+            <button onClick={toggle}>
                 {colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
             </button>
-            <AppRouter />
         </>
     );
 }
+
 export default App;

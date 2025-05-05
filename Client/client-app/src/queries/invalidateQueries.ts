@@ -35,3 +35,7 @@ export const invalidateCreditPlans = async () => {
 export const invalidateUserProfile = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.userProfile() });
 };
+
+export const invalidateTheme = async (userId: string) => {
+    await queryClient.invalidateQueries({queryKey: queryKeys.theme(userId)});
+};

@@ -10,5 +10,7 @@ export const queryKeys = {
 
     userProfile: () => ['userProfile'],
 
-    allOperations: () => ['allOperations']
+    allOperations: () => ['allOperations'],
+
+    theme: (userId: string) => ["theme", userId],
 };
