@@ -21,14 +21,14 @@ export const AccountDetailsPage = () => {
     const { data: accounts, isLoading: isAccountsLoading } = useAccountsQuery();
     //const { data: operations, isLoading: isOperationsLoading } = useOperationsQuery(accountId!);
     const closeAccountMutation = useCloseAccountMutation(accountId!);
-    const { operations, isLoading: isOperationsLoading } =
+    const { operations } =
         useOperationsStream(accountId!);
 
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
     const account = useMemo(() => accounts?.find((acc : any) => acc.id === accountId), [accounts, accountId]);
 
-    if (isAccountsLoading || isOperationsLoading) return <p>Загрузка...</p>;
+    if (isAccountsLoading) return <p>Загрузка...</p>;
     if (!account) {
         navigate('/dashboard');
         return null;

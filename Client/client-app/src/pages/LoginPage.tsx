@@ -7,8 +7,7 @@ import {clearAuthError, login} from "../store/AuthStore";
 
 export const LoginPage = () => {
     const dispatch = useAppDispatch();
-    //const navigate = useNavigate();
-    //const token = useAppSelector((state) => state.auth.token);
+
     const backendError = useAppSelector((state) => state.auth.error);
     const [loading, setLoading] = useState(false);
 

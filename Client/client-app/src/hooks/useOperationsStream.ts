@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
 
-interface Operation {
-    id: string;
-    amount: number;
-    operationType: string;
-    time: string;
+interface RawOp {
+    Id?: string;
+    id?: string;
+    Amount?: number;
+    amount?: number;
+    OperationType?: string;
+    operationType?: string;
+    Time?: string;
+    time?: string;
 }
 
 export function useOperationsStream(accountId: string) {
-    const [operations, setOperations] = useState<Operation[]>([]);
+    const [operations, setOperations] = useState<RawOp[]>([]);
     const accessToken = localStorage.getItem('token');
 
     useEffect(() => {
-        if (!accountId || !accessToken) {
-            return;
-        }
+        if (!accountId || !accessToken) return;
 
         setOperations([]);
 
@@ -26,18 +28,33 @@ export function useOperationsStream(accountId: string) {
         ws.onclose = () => console.log('WS закрыт');
 
         ws.onmessage = ev => {
+            let parsed: any;
             try {
-                const parsed = JSON.parse(ev.data);
-                const msgs   = Array.isArray(parsed) ? parsed : [parsed];
-                const newOps = msgs.map(m => ({
-                    id:            m.Id   || m.id,
+                parsed = JSON.parse(ev.data);
+            } catch {
+                console.warn('Невалидный WS payload', ev.data);
+                return;
+            }
+
+            if (Array.isArray(parsed)) {
+                const allOps = parsed.map(m => ({
+                    id:            m.Id   ?? m.id,
                     amount:        m.Amount ?? m.amount,
                     operationType: m.OperationType ?? m.operationType,
                     time:          m.Time  ?? m.time,
                 }));
-                setOperations(prev => [...prev, ...newOps]);
-            } catch {
-                console.warn('Невалидный WS payload', ev.data);
+                allOps.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+                setOperations(allOps);
+            }
+            else {
+                const m = parsed as RawOp;
+                const op = {
+                    id:            m.Id   ?? m.id,
+                    amount:        m.Amount ?? m.amount,
+                    operationType: m.OperationType ?? m.operationType,
+                    time:          m.Time  ?? m.time,
+                };
+                setOperations(prev => [op, ...prev]);
             }
         };
 
