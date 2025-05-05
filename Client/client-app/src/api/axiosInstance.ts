@@ -14,6 +14,15 @@ axiosInstance.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (
+        (config.method?.toLowerCase() === 'post' || config.method?.toLowerCase() === 'delete') &&
+        !config.headers['Idempotency-Key'] &&
+        !config.url?.includes('/Refresh')
+    ) {
+        config.headers['Idempotency-Key'] = crypto.randomUUID();
+    }
+
     const method = config.method?.toUpperCase();
     const url = config.url;
     console.log(`[${method}] ${url}`);
