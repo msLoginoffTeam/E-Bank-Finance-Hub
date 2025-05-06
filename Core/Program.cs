@@ -115,7 +115,8 @@ app.UseAuthorization();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true") app.UseMiddleware<HttpInstabilityMiddleware>();
+// if (Environment.GetEnvironmentVariable("USE_INSTABILITY") == "true")
+app.UseMiddleware<HttpInstabilityMiddleware>();
 
 app.UseMiddleware<IdempotencyMiddleware>();
 
